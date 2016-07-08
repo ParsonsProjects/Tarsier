@@ -1,0 +1,41 @@
+{
+	"update_url": "https://clients2.google.com/service/update2/crx",
+	"manifest_version": 2,
+	"name": "Trello App",
+	"version": "0.9.3",
+	"icons": {
+		"16": "images/trello-mark-blue-16.png",
+		"32": "images/trello-mark-blue-32.png",
+		"128": "images/trello-mark-blue-128.png"
+	},
+	"permissions": [
+		"storage",
+		"unlimitedStorage",
+		"notifications",
+		"tabs",
+		"bookmarks",
+		"http://*/*",
+		"https://*/*"
+	],
+	"background": {
+        "persistent": false,
+        "scripts": ["scripts/background.js"]
+    },
+    "content_security_policy": "script-src 'self' https://api.trello.com/1/client.js?key=f8af011952b5693e6a92da65bf6f298e; object-src 'self'",
+	"content_scripts": [{
+		"matches": [
+			"https://trello.com/*"
+		],
+		"exclude_matches": [
+			"https://trello.com/1/authorize*"
+		],
+		"js": [
+			"js/jquery-1.7.2.min.js",
+			"js/trello.js"
+		],
+		"css": [
+			"css/trello.css",
+			"css/label_titles.css"
+		]
+	}]
+}
