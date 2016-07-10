@@ -2,7 +2,7 @@
 	"update_url": "https://clients2.google.com/service/update2/crx",
 	"manifest_version": 2,
 	"name": "Trello App",
-	"version": "0.9.3",
+	"version": "0.0.1",
 	"icons": {
 		"16": "images/trello-mark-blue-16.png",
 		"32": "images/trello-mark-blue-32.png",
@@ -14,28 +14,50 @@
 		"notifications",
 		"tabs",
 		"bookmarks",
+		"webRequest", 
+		"webRequestBlocking", 
+		"\u003Call_urls>",
 		"http://*/*",
 		"https://*/*"
 	],
+	"browser_action": {
+	    "default_icon": "images/trello-mark-blue-16.png",
+	    "default_popup": "popup.html"
+	},
+	"options_page": "options.html",
 	"background": {
-        "persistent": false,
-        "scripts": ["scripts/background.js"]
+        "persistent": true,
+        "scripts": [
+        	"scripts/background.js"
+        ]
     },
-    "content_security_policy": "script-src 'self' https://api.trello.com/1/client.js?key=f8af011952b5693e6a92da65bf6f298e; object-src 'self'",
-	"content_scripts": [{
-		"matches": [
-			"https://trello.com/*"
-		],
-		"exclude_matches": [
-			"https://trello.com/1/authorize*"
-		],
-		"js": [
-			"js/jquery-1.7.2.min.js",
-			"js/trello.js"
-		],
-		"css": [
-			"css/trello.css",
-			"css/label_titles.css"
-		]
-	}]
+    "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
+	"content_scripts": [
+		{
+			"matches": [
+				"https://trello.com/*"
+			],
+			"exclude_matches": [
+				"https://trello.com/1/authorize*",
+				"https://trello.com/1/token/approve"
+			],
+			"js": [
+				"js/jquery-1.7.2.min.js",
+				"js/trello.js"
+			],
+			"css": [
+				"css/trello.css",
+				"css/label_titles.css"
+			]
+		},
+		{
+			"matches": [
+				"https://trello.com/1/token/approve"
+			],
+			"js": [
+				"js/jquery-1.7.2.min.js",
+				"js/trello-token.js"
+			]
+		}
+	]
 }
