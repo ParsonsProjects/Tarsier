@@ -59,11 +59,31 @@ var checkAuth = {
 	}
 }
 
+var userActions = {
+	view: function(ctrl, args) {
+		var markup = m('');
+		if(user.current.card()) {
+			markup = m('.buttons', [
+				m('.ui divider'),
+				m('.ui icon button tiny', {
+					onclick: (e) => {
+						e.preventDefault();
+						
+					}
+				}, [
+					m('i.play icon')
+				])
+			])
+		}
+		return markup;
+	}
+}
+
 var userCards = {
     view: function(ctrl, args) {
-    	var markup = m('div');
+    	var markup = m('');
     	if(user.cards.length) {
-    		markup = m('div', [
+    		markup = m('', [
 				m('.ui sub header', 'Cards'),
 				m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
 
@@ -72,6 +92,12 @@ var userCards = {
 			            	onChange: function(value, text, $selectedItem) {
 			            		m.startComputation();
 						      	user.current.card(value);
+						      	chrome.runtime.sendMessage({
+							    	from: 'trello',
+								    subject: 'set',
+								    label: 'currentCard',
+								    value: value
+								});
 						      	m.endComputation();
 						    }
 			            });
@@ -81,10 +107,12 @@ var userCards = {
 					m('option[value=""]', 'Select'),
 			        user.cards.map(function(card, index) {
 			        	if(!card.closed) {
-			                return m('option[value="'+card.id+'"]', card.name)
+			                if(card.id == user.current.card()) return m('option[value="'+card.id+'"][selected="selected"]', card.name)
+			                else return m('option[value="'+card.id+'"]', card.name)
 			            }
 			        })
-			    ])
+			    ]),
+			    m(userActions)
 			])
     	}
 		return markup;
@@ -93,9 +121,9 @@ var userCards = {
 
 var userBoards = {
     view: function(ctrl, args) {
-    	var markup = m('div');
+    	var markup = m('');
     	if(user.boards.length > 0) {
-    		markup = m('div', [
+    		markup = m('', [
 				m(userCards),
 				m('.ui sub header', 'Boards'),
 				m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
@@ -123,10 +151,12 @@ var userBoards = {
 					m('option[value=""]', 'Select'),
 			        user.boards.map(function(board, index) {
 			        	if(!board.closed) {
-			                return m('option[value="'+board.id+'"]', board.name)
+			                if(board.id == user.current.board()) return m('option[value="'+board.id+'"][selected="selected"]', board.name)
+			                else return m('option[value="'+board.id+'"]', board.name)
 			            }
 			        })
-			    ])
+			    ]),
+			    m('.ui hidden divider')
 			])
     	}
 		return markup;
