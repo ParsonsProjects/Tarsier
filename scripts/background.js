@@ -1,11 +1,52 @@
 
+chrome.storage.sync.get(function(items) {
+	Object.keys(items).forEach(function(key) {
+	    localStorage.setItem(key, items[key]);
+	});
+});
+
 chrome.runtime.onMessage.addListener((msg, sender) => {
 
 	if ((msg.from === 'trello') && (msg.subject === 'token')) {
-        localStorage.setItem('trello_token', msg.content);
-        chrome.windows.getCurrent(function(data){
-            chrome.windows.remove(data.id, () => {});
+		chrome.storage.sync.set({'trello_token': msg.content}, function() {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.setItem('trello_token', msg.content);
+			chrome.windows.getCurrent(function(data){
+	            chrome.windows.remove(data.id, () => {
+	            	chrome.runtime.sendMessage({
+					    from:    'trello',
+					    subject: 'update'
+					});
+	            });
+	        });
         });
+	}
+
+	if ((msg.from === 'trello') && (msg.subject === 'set')) {
+		var label = msg.label;
+		chrome.storage.sync.set({label: msg.value}, function() {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.setItem(label, msg.value);
+	    });
+	}
+
+	if ((msg.from === 'trello') && (msg.subject === 'clear')) {
+		chrome.storage.sync.clear(function() {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.clear();
+			chrome.runtime.sendMessage({
+			    from:    'trello',
+			    subject: 'update'
+			});
+	    });
+	}
+
+	if ((msg.from === 'trello') && (msg.subject === 'remove')) {
+		var label = msg.label;
+		chrome.storage.sync.remove(label, function() {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.removeItem(label);
+	    });
 	}
 
     /* First, validate the message's structure */
