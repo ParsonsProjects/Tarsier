@@ -1,7 +1,7 @@
 {
 	"update_url": "https://clients2.google.com/service/update2/crx",
 	"manifest_version": 2,
-	"name": "Trello App",
+	"name": "Tarsier",
 	"version": "0.0.1",
 	"icons": {
 		"16": "images/trello-mark-blue-16.png",
@@ -14,8 +14,8 @@
 		"notifications",
 		"tabs",
 		"bookmarks",
-		"webRequest", 
-		"webRequestBlocking", 
+		"webRequest",
+		"webRequestBlocking",
 		"\u003Call_urls>",
 		"http://*/*",
 		"https://*/*"
@@ -27,9 +27,7 @@
 	"options_page": "options.html",
 	"background": {
         "persistent": true,
-        "scripts": [
-        	"scripts/background.js"
-        ]
+        "page": "background.html"
     },
     "content_security_policy": "script-src 'self' 'unsafe-eval'; object-src 'self'",
 	"content_scripts": [
@@ -43,6 +41,7 @@
 			],
 			"js": [
 				"js/jquery-1.7.2.min.js",
+				"js/moment.min.js",
 				"js/trello.js"
 			],
 			"css": [

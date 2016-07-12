@@ -1,8 +1,12 @@
 
-chrome.storage.sync.get(function(items) {
-	Object.keys(items).forEach(function(key) {
-	    localStorage.setItem(key, items[key]);
+trello.runSync();
+
+chrome.tabs.onHighlighted.addListener((highlightInfo) => {
+
+	chrome.tabs.query({active: true}, (tab) => {
+		if(tab[0].url.match(/(trello\.com)/g)) trello.runSync();
 	});
+
 });
 
 chrome.runtime.onMessage.addListener((msg, sender) => {
@@ -22,33 +26,6 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
         });
 	}
 
-	if ((msg.from === 'trello') && (msg.subject === 'set')) {
-		var label = msg.label;
-		chrome.storage.sync.set({label: msg.value}, function() {
-			if (chrome.runtime.error) console.log("Runtime error.");
-			localStorage.setItem(label, msg.value);
-	    });
-	}
-
-	if ((msg.from === 'trello') && (msg.subject === 'clear')) {
-		chrome.storage.sync.clear(function() {
-			if (chrome.runtime.error) console.log("Runtime error.");
-			localStorage.clear();
-			chrome.runtime.sendMessage({
-			    from:    'trello',
-			    subject: 'update'
-			});
-	    });
-	}
-
-	if ((msg.from === 'trello') && (msg.subject === 'remove')) {
-		var label = msg.label;
-		chrome.storage.sync.remove(label, function() {
-			if (chrome.runtime.error) console.log("Runtime error.");
-			localStorage.removeItem(label);
-	    });
-	}
-
     /* First, validate the message's structure */
     if ((msg.from === 'trello') && (msg.subject === 'showApp')) {
     	chrome.tabs.create({
@@ -64,6 +41,19 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 		    });
 		});
     }
+
+	if ((msg.from === 'trello') && (msg.subject === 'runSync')) trello.runSync();
+
+    if ((msg.from === 'trello') && (msg.subject === 'set')) trello.set(msg.label, msg.value);
+	if ((msg.from === 'trello') && (msg.subject === 'clear')) trello.clear();
+	if ((msg.from === 'trello') && (msg.subject === 'remove')) trello.remove(msg.label);
+
+	if ((msg.from === 'trello') && (msg.subject === 'status')) trello.status();
+	if ((msg.from === 'trello') && (msg.subject === 'getBoards')) trello.getBoards();
+	if ((msg.from === 'trello') && (msg.subject === 'getCards')) trello.getCards(msg.value);
+	if ((msg.from === 'trello') && (msg.subject === 'timerStart')) trello.timerStart(msg.value, msg.dates, msg.data);
+	if ((msg.from === 'trello') && (msg.subject === 'timerLog')) trello.timerLog(msg.value.card, msg.value.comment, msg.dates, msg.data);
+	if ((msg.from === 'trello') && (msg.subject === 'timerStop')) trello.timerStop();
 
 });
 
@@ -81,4 +71,4 @@ chrome.webRequest.onHeadersReceived.addListener(
   	}, {
     	urls: ["<all_urls>"]
   	}, ["blocking", "responseHeaders"]
- );
+);
