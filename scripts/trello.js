@@ -1,6 +1,16 @@
 
 const trello = {};
 
+trello.sendMessage = function(data) {
+
+	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+	  	chrome.tabs.sendMessage(tabs[0].id, data, function(response) {
+	    	console.log(response.farewell);
+	  	});
+	});
+
+}
+
 trello.runSync = function() {
 
 	chrome.storage.sync.get(function(items) {
@@ -173,6 +183,7 @@ trello.timerStart = function(currentCard, date, data) {
 	let comment = timerComment();
 	Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
        	trello.set('timerID', successMsg.id);
+       	console.log(successMsg)
        	chrome.runtime.sendMessage({
 		    from: 'background',
 		    subject: 'timerStart',
