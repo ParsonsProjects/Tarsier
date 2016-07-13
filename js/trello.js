@@ -11,90 +11,86 @@ $(() => {
 	});
 
 	// check if popup already open
+	if(window.location.href.match(/(trello.com\/c)/g)) checkCardOpen();
 	$('.list-card').not('.js-open-quick-card-editor').on('click', () => {
+		checkCardOpen();
+	});
 
-		let $cardWindow = $('.window-module.other-actions .u-clearfix');
 
-		let cardInterval = setInterval(() => {
+});
 
-			if($cardWindow.length) {
+var checkCardOpen = () => {
 
-				let $startTimerBtn = $('<a class="button-link js-start-timer" href="#"><span class="icon-sm icon-clock"></span> Start Timer</a>').prependTo($cardWindow);
-				let $pauseTimerBtn = $('<a class="button-link js-pause-timer hide" href="#"><span class="icon-sm icon-clock"></span> Pause Timer</a>').prependTo($cardWindow);
-				let $stopTimerBtn = $('<a class="button-link js-stop-timer hide" href="#"><span class="icon-sm icon-close"></span> Stop Timer</a>').prependTo($cardWindow);
+	let $cardWindow = $('.window-module.other-actions .u-clearfix');
 
-				$startTimerBtn.on('click', (e) => {
-					e.preventDefault();
+	let cardInterval = setInterval(() => {
 
-					timerID = '';
-					cardID = '';
+		if($cardWindow.length) {
 
-					$.get(window.location.href + '.json', (data) => {
-						cardID = data.id;
-						timerStarted = true;
-						chrome.runtime.sendMessage({
-					    	from: 'trello',
-						    subject: 'set',
-						    label: 'timerStarted',
-						    value: true
-						});
-						timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
-						$startTimerBtn.addClass('hide');
-						$pauseTimerBtn.removeClass('hide');
-						$stopTimerBtn.removeClass('hide');
-					});
+			let $startTimerBtn = $('<a class="button-link js-start-timer" href="#"><span class="icon-sm icon-clock"></span> Start Timer</a>').prependTo($cardWindow);
+			let $pauseTimerBtn = $('<a class="button-link js-pause-timer hide" href="#"><span class="icon-sm icon-clock"></span> Pause Timer</a>').prependTo($cardWindow);
+			let $stopTimerBtn = $('<a class="button-link js-stop-timer hide" href="#"><span class="icon-sm icon-close"></span> Stop Timer</a>').prependTo($cardWindow);
 
-				});
+			$startTimerBtn.on('click', (e) => {
+				e.preventDefault();
 
-				$pauseTimerBtn.on('click', (e) => {
-					e.preventDefault();
+				timerID = '';
+				cardID = '';
 
-					chrome.runtime.sendMessage({
-				    	from: 'trello',
-					    subject: 'set',
-					    label: 'timerPaused',
-					    value: true
-					});
-					timerLog('Timer paused - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'paused', 'time': moment()});
-
-				});
-
-				$stopTimerBtn.on('click', (e) => {
-					e.preventDefault();
-
-					timerStarted = false;
+				$.get(window.location.href + '.json', (data) => {
+					cardID = data.id;
+					timerStarted = true;
 					chrome.runtime.sendMessage({
 				    	from: 'trello',
 					    subject: 'set',
 					    label: 'timerStarted',
-					    value: false
+					    value: true
 					});
-					timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
-					$stopTimerBtn.addClass('hide');
-					$pauseTimerBtn.addClass('hide');
-					$startTimerBtn.removeClass('hide');
-
+					timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
+					$startTimerBtn.addClass('hide');
+					$pauseTimerBtn.removeClass('hide');
+					$stopTimerBtn.removeClass('hide');
 				});
 
-				clearInterval(cardInterval);
+			});
 
-			}
+			$pauseTimerBtn.on('click', (e) => {
+				e.preventDefault();
 
-		}, 100);
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'set',
+				    label: 'timerPaused',
+				    value: true
+				});
+				timerLog('Timer paused - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'paused', 'time': moment()});
 
-	});
+			});
 
-});
+			$stopTimerBtn.on('click', (e) => {
+				e.preventDefault();
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
-console.log(msg)
-	if ((msg.from === 'background') && (msg.subject === 'timerStart')) {
-		console.log(msg.value)
-		timerID = msg.value.id;
-		// resolve(msg.value);
-	}
+				timerStarted = false;
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'set',
+				    label: 'timerStarted',
+				    value: false
+				});
+				timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
+				$stopTimerBtn.addClass('hide');
+				$pauseTimerBtn.addClass('hide');
+				$startTimerBtn.removeClass('hide');
 
-});
+			});
+
+			clearInterval(cardInterval);
+
+		}
+
+	}, 100);
+
+}
 
 var timerStart = (timerData, timerDates) => {
 
@@ -106,6 +102,14 @@ var timerStart = (timerData, timerDates) => {
 		    value: cardID,
 		    data: timerData,
 		    dates: timerDates
+		});
+
+		chrome.runtime.onMessage.addListener((msg, sender) => {
+
+			if ((msg.from === 'background') && (msg.subject === 'timerStart')) {
+				resolve(msg.value);
+			}
+
 		});
 
 	});

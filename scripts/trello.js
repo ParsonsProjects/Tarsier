@@ -2,10 +2,10 @@
 const trello = {};
 
 trello.sendMessage = function(data) {
-
+	console.log(data)
 	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
 	  	chrome.tabs.sendMessage(tabs[0].id, data, function(response) {
-	    	console.log(response.farewell);
+
 	  	});
 	});
 
@@ -17,12 +17,11 @@ trello.runSync = function() {
 		Object.keys(items).forEach(function(key) {
 		    localStorage.setItem(key, items[key]);
 		});
-		chrome.runtime.sendMessage({
+		trello.sendMessage({
 		    from: 'background',
 		    subject: 'synced'
 		});
 	});
-
 
 }
 
@@ -41,7 +40,7 @@ trello.clear = function() {
 		if (chrome.runtime.error) console.log("Runtime error.");
 		localStorage.clear();
 		Trello.deauthorize();
-		chrome.runtime.sendMessage({
+		trello.sendMessage({
 		    from: 'trello',
 		    subject: 'update'
 		});
@@ -61,7 +60,7 @@ trello.remove = function(label) {
 trello.getBoards = function() {
 
 	Trello.get("members/me/boards/all", (boards) => {
-        chrome.runtime.sendMessage({
+        trello.sendMessage({
 		    from: 'background',
 		    subject: 'getBoards',
 		    value: boards
@@ -73,7 +72,7 @@ trello.getBoards = function() {
 trello.getCards = (id) => {
 
 	Trello.get("boards/"+id+"/cards/all", (cards) => {
-        chrome.runtime.sendMessage({
+        trello.sendMessage({
 		    from: 'background',
 		    subject: 'getCards',
 		    value: cards
@@ -92,18 +91,14 @@ trello.status = function() {
         interactive: false,
         scope: {read: true, write: true},
         success: () => {
-        	chrome.runtime.sendMessage({
+        	trello.sendMessage({
 			    from: 'background',
 			    subject: 'status',
 			    value: true
 			});
         },
         error: () => {
-           	chrome.runtime.sendMessage({
-			    from: 'background',
-			    subject: 'status',
-			    value: false
-			});
+        	// maybe error and store in storage?
         }
     });
 
@@ -115,7 +110,7 @@ trello.timerLog = function(currentCard, currentComment, date, data) {
 		trello.getData(data).then(() => {
 			let comment = timerComment();
 			Trello.put("cards/"+currentCard+"/actions/"+currentComment+"/comments", { idAction: currentComment, text: comment }, (successMsg) => {
-		       	chrome.runtime.sendMessage({
+		       	trello.sendMessage({
 				    from: 'background',
 				    subject: 'timerLog',
 				    value: successMsg
@@ -124,6 +119,45 @@ trello.timerLog = function(currentCard, currentComment, date, data) {
 		    	trello.remove('timerID');
 		    });
 		});
+	});
+
+}
+
+trello.timerStart = function(currentCard, date, data) {
+
+	timerDates.push(date);
+	timerData.push(data);
+
+	let timerDatesString = JSON.stringify(timerDates);
+
+	chrome.storage.local.set({'timerDates': timerDatesString}, () => {
+		if (chrome.runtime.error) console.log("Runtime error.");
+    });
+
+    chrome.storage.local.set({'timerData': timerData.join('|')}, () => {
+		if (chrome.runtime.error) console.log("Runtime error.");
+    });
+
+	let comment = timerComment();
+	Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
+       	trello.set('timerID', successMsg.id);
+       	trello.sendMessage({
+		    from: 'background',
+		    subject: 'timerStart',
+		    value: successMsg
+		});
+    });
+
+}
+
+trello.timerStop = function() {
+
+	chrome.storage.local.remove('timerDates');
+	chrome.storage.local.remove('timerData');
+	trello.remove('timerStarted');
+   	trello.sendMessage({
+	    from: 'background',
+	    subject: 'timerStop'
 	});
 
 }
@@ -165,43 +199,15 @@ trello.getData = function(data) {
 
 }
 
-trello.timerStart = function(currentCard, date, data) {
+trello.search = function(data) {
 
-	timerDates.push(date);
-	timerData.push(data);
-
-	let timerDatesString = JSON.stringify(timerDates);
-
-	chrome.storage.local.set({'timerDates': timerDatesString}, () => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-    });
-
-    chrome.storage.local.set({'timerData': timerData.join('|')}, () => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-    });
-
-	let comment = timerComment();
-	Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
-       	trello.set('timerID', successMsg.id);
-       	console.log(successMsg)
-       	chrome.runtime.sendMessage({
+	Trello.get("search", data, (successMsg) => {
+       	trello.sendMessage({
 		    from: 'background',
-		    subject: 'timerStart',
+		    subject: 'search',
 		    value: successMsg
 		});
     });
-
-}
-
-trello.timerStop = function() {
-
-	chrome.storage.local.remove('timerDates');
-	chrome.storage.local.remove('timerData');
-	trello.remove('timerStarted');
-   	chrome.runtime.sendMessage({
-	    from: 'background',
-	    subject: 'timerStop'
-	});
 
 }
 

@@ -229,10 +229,10 @@ var timerStart = (timerData, timerDates) => {
 var userCards = {
     view: function(ctrl, args) {
     	var markup = m('');
-    	if(user.cards.length) {
+    	//if(user.cards.length) {
     		markup = m('', [
 				m('.ui sub header', 'Cards'),
-				m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
+				/*m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
 
 		            if (!isInitialized) {
 		            	$(element).dropdown({
@@ -258,10 +258,53 @@ var userCards = {
 			                else return m('option[value="'+card.id+'"]', card.name)
 			            }
 			        })
+			    ]),*/
+			    m('.ui search', { config: function(element, isInitialized) {
+
+		            if (!isInitialized) {
+
+		            	$(element).search({
+					    	apiSettings : {
+					    		onResponse: function(data) {
+					    			console.log(data.cards)
+					    			var response = {
+							            results : data.cards
+							        };
+					    			return response;
+					    		},
+					    		url: 'https://trello.com/1/search?query={query}&modelTypes=cards'
+					    	},
+					    	minCharacters : 3,
+				    		fields: {
+						      	title : 'name',
+						      	description : 'desc'
+						    },
+					        onSelect: function(result, response) {
+					        	let value = result.id;
+					        	m.startComputation();
+						      	user.current.card(value);
+						      	chrome.runtime.sendMessage({
+							    	from: 'trello',
+								    subject: 'set',
+								    label: 'currentCard',
+								    value: value
+								});
+						      	m.endComputation();
+					        }
+					    });
+
+		            }
+
+		        } }, [
+			      	m('.ui icon input', [
+			        	m('input.prompt[type="text"][placeholder="Search Cards"]'),
+			        	m('i.search link icon')
+			      	]),
+			        m('.results')
 			    ]),
 			    m(userActions)
 			])
-    	}
+    	//}
 		return markup;
     }
 }
@@ -273,7 +316,7 @@ var userBoards = {
     		markup = m('', [
 				m(userCards),
 				m('.ui sub header', 'Boards'),
-				m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
+				/*m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
 
 		            if (!isInitialized) {
 		            	$(element).dropdown({
@@ -302,6 +345,50 @@ var userBoards = {
 			                else return m('option[value="'+board.id+'"]', board.name)
 			            }
 			        })
+			    ]),*/
+				m('.ui search', { config: function(element, isInitialized) {
+
+			            if (!isInitialized) {
+
+			            	$(element).search({
+						    	apiSettings : {
+						    		onResponse: function(data) {
+						    			var response = {
+								            results : data.boards
+								        };
+						    			return response;
+						    		},
+						    		url: 'https://trello.com/1/search?query={query}&modelTypes=boards'
+						    	},
+						    	minCharacters : 3,
+					    		fields: {
+							      	title   : 'name'
+							    },
+						        onSelect: function(result, response) {
+						        	let value = result.id;
+						        	user.current.board(value);
+							      	chrome.runtime.sendMessage({
+								    	from: 'trello',
+									    subject: 'set',
+									    label: 'currentBoard',
+									    value: value
+									});
+							      	getCards(value).then((cards) => {
+							      		m.startComputation();
+						            	user.cards = cards;
+						            	m.endComputation();
+						            });
+						        }
+						    });
+
+			            }
+
+			        } }, [
+			      	m('.ui icon input', [
+			        	m('input.prompt[type="text"][placeholder="Search Boards"]'),
+			        	m('i.search link icon')
+			      	]),
+			        m('.results')
 			    ]),
 			    m('.ui hidden divider')
 			])
@@ -328,6 +415,11 @@ $(() => {
 	chrome.runtime.sendMessage({
 	    from:    'trello',
 	    subject: 'runSync'
+	});
+
+	$('body').on('click', '.result', function(e){
+		e.preventDefault();
+		e.stopPropagation();
 	});
 
 })

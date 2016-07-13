@@ -9,7 +9,7 @@ chrome.tabs.onHighlighted.addListener((highlightInfo) => {
 
 });
 
-chrome.runtime.onMessage.addListener((msg, sender) => {
+chrome.runtime.onMessage.addListener((msg, sender, responseCallback) => {
 
 	if ((msg.from === 'trello') && (msg.subject === 'token')) {
 		chrome.storage.sync.set({'trello_token': msg.content}, function() {
@@ -47,6 +47,7 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
     if ((msg.from === 'trello') && (msg.subject === 'set')) trello.set(msg.label, msg.value);
 	if ((msg.from === 'trello') && (msg.subject === 'clear')) trello.clear();
 	if ((msg.from === 'trello') && (msg.subject === 'remove')) trello.remove(msg.label);
+	if ((msg.from === 'trello') && (msg.subject === 'search')) trello.search(msg.value);
 
 	if ((msg.from === 'trello') && (msg.subject === 'status')) trello.status();
 	if ((msg.from === 'trello') && (msg.subject === 'getBoards')) trello.getBoards();
