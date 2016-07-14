@@ -1,5 +1,6 @@
 
 trello.runSync();
+trello.status();
 
 chrome.tabs.onHighlighted.addListener((highlightInfo) => {
 
@@ -73,3 +74,15 @@ chrome.webRequest.onHeadersReceived.addListener(
     	urls: ["<all_urls>"]
   	}, ["blocking", "responseHeaders"]
 );
+
+// https://developer.chrome.com/apps/notifications#type-TemplateType
+
+/*
+chrome.notifications.create({
+	iconUrl: "images/trello-mark-blue-32.png",
+	type: "basic",
+    message: 'popup',
+    title: 'docked',
+    requireInteraction: true
+});
+*/

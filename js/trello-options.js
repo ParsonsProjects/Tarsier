@@ -231,78 +231,83 @@ var userCards = {
     	var markup = m('');
     	//if(user.cards.length) {
     		markup = m('', [
+			    m(userActions),
 				m('.ui sub header', 'Cards'),
-				/*m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
+				m('.ui two column middle aligned very relaxed stackable grid', [
+					m('.column', [
+						m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
 
-		            if (!isInitialized) {
-		            	$(element).dropdown({
-			            	onChange: function(value, text, $selectedItem) {
-			            		m.startComputation();
-						      	user.current.card(value);
-						      	chrome.runtime.sendMessage({
-							    	from: 'trello',
-								    subject: 'set',
-								    label: 'currentCard',
-								    value: value
-								});
-						      	m.endComputation();
-						    }
-			            });
-		            }
+				            if (!isInitialized) {
+				            	$(element).dropdown({
+					            	onChange: function(value, text, $selectedItem) {
+					            		m.startComputation();
+								      	user.current.card(value);
+								      	chrome.runtime.sendMessage({
+									    	from: 'trello',
+										    subject: 'set',
+										    label: 'currentCard',
+										    value: value
+										});
+								      	m.endComputation();
+								    }
+					            });
+				            }
 
-		        } }, [
-					m('option[value=""]', 'Select'),
-			        user.cards.map(function(card, index) {
-			        	if(!card.closed) {
-			                if(card.id == user.current.card()) return m('option[value="'+card.id+'"][selected="selected"]', card.name)
-			                else return m('option[value="'+card.id+'"]', card.name)
-			            }
-			        })
-			    ]),*/
-			    m('.ui search', { config: function(element, isInitialized) {
+				        } }, [
+							m('option[value=""]', 'Select Card'),
+					        user.cards.map(function(card, index) {
+					        	if(!card.closed) {
+					                if(card.id == user.current.card()) return m('option[value="'+card.id+'"][selected="selected"]', card.name)
+					                else return m('option[value="'+card.id+'"]', card.name)
+					            }
+					        })
+					    ])
+					]),
+					m('.ui vertical divider', 'Or'),
+					m('.center aligned column', [
+					    m('.ui search', { config: function(element, isInitialized) {
 
-		            if (!isInitialized) {
+				            if (!isInitialized) {
 
-		            	$(element).search({
-					    	apiSettings : {
-					    		onResponse: function(data) {
-					    			console.log(data.cards)
-					    			var response = {
-							            results : data.cards
-							        };
-					    			return response;
-					    		},
-					    		url: 'https://trello.com/1/search?query={query}&modelTypes=cards'
-					    	},
-					    	minCharacters : 3,
-				    		fields: {
-						      	title : 'name',
-						      	description : 'desc'
-						    },
-					        onSelect: function(result, response) {
-					        	let value = result.id;
-					        	m.startComputation();
-						      	user.current.card(value);
-						      	chrome.runtime.sendMessage({
-							    	from: 'trello',
-								    subject: 'set',
-								    label: 'currentCard',
-								    value: value
-								});
-						      	m.endComputation();
-					        }
-					    });
+				            	$(element).search({
+							    	apiSettings : {
+							    		onResponse: function(data) {
+							    			var response = {
+									            results : data.cards
+									        };
+							    			return response;
+							    		},
+							    		url: 'https://trello.com/1/search?query={query}&modelTypes=cards'
+							    	},
+							    	minCharacters : 3,
+						    		fields: {
+								      	title : 'name'
+								    },
+							        onSelect: function(result, response) {
+							        	let value = result.id;
+							        	m.startComputation();
+								      	user.current.card(value);
+								      	chrome.runtime.sendMessage({
+									    	from: 'trello',
+										    subject: 'set',
+										    label: 'currentCard',
+										    value: value
+										});
+								      	m.endComputation();
+							        }
+							    });
 
-		            }
+				            }
 
-		        } }, [
-			      	m('.ui icon input', [
-			        	m('input.prompt[type="text"][placeholder="Search Cards"]'),
-			        	m('i.search link icon')
-			      	]),
-			        m('.results')
-			    ]),
-			    m(userActions)
+				        } }, [
+					      	m('.ui icon input', [
+					        	m('input.prompt[type="text"][placeholder="Search All Cards"]'),
+					        	m('i.search link icon')
+					      	]),
+					        m('.results')
+					    ])
+					])
+				])
 			])
     	//}
 		return markup;
@@ -316,80 +321,87 @@ var userBoards = {
     		markup = m('', [
 				m(userCards),
 				m('.ui sub header', 'Boards'),
-				/*m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
+				m('.ui two column middle aligned very relaxed stackable grid', [
+					m('.column', [
+						m("select.ui fluid search dropdown", { config: function(element, isInitialized) {
 
-		            if (!isInitialized) {
-		            	$(element).dropdown({
-			            	onChange: function(value, text, $selectedItem) {
-						      	user.current.board(value);
-						      	chrome.runtime.sendMessage({
-							    	from: 'trello',
-								    subject: 'set',
-								    label: 'currentBoard',
-								    value: value
-								});
-						      	getCards(value).then((cards) => {
-						      		m.startComputation();
-					            	user.cards = cards;
-					            	m.endComputation();
+				            if (!isInitialized) {
+				            	$(element).dropdown({
+					            	onChange: function(value, text, $selectedItem) {
+								      	user.current.board(value);
+								      	chrome.runtime.sendMessage({
+									    	from: 'trello',
+										    subject: 'set',
+										    label: 'currentBoard',
+										    value: value
+										});
+								      	getCards(value).then((cards) => {
+								      		m.startComputation();
+							            	user.cards = cards;
+							            	m.endComputation();
+							            });
+								    }
 					            });
-						    }
-			            });
-		            }
+				            }
 
-		        } }, [
-					m('option[value=""]', 'Select'),
-			        user.boards.map(function(board, index) {
-			        	if(!board.closed) {
-			                if(board.id == user.current.board()) return m('option[value="'+board.id+'"][selected="selected"]', board.name)
-			                else return m('option[value="'+board.id+'"]', board.name)
-			            }
-			        })
-			    ]),*/
-				m('.ui search', { config: function(element, isInitialized) {
+				        } }, [
+							m('option[value=""]', 'Select Board'),
+					        user.boards.map(function(board, index) {
+					        	if(!board.closed) {
+					                if(board.id == user.current.board()) return m('option[value="'+board.id+'"][selected="selected"]', board.name)
+					                else return m('option[value="'+board.id+'"]', board.name)
+					            }
+					        })
+					    ])
+					]),
+					m('.ui vertical divider', 'Or'),
+					m('.center aligned column', [
+						m('.ui search', { config: function(element, isInitialized) {
 
-			            if (!isInitialized) {
+					            if (!isInitialized) {
 
-			            	$(element).search({
-						    	apiSettings : {
-						    		onResponse: function(data) {
-						    			var response = {
-								            results : data.boards
-								        };
-						    			return response;
-						    		},
-						    		url: 'https://trello.com/1/search?query={query}&modelTypes=boards'
-						    	},
-						    	minCharacters : 3,
-					    		fields: {
-							      	title   : 'name'
-							    },
-						        onSelect: function(result, response) {
-						        	let value = result.id;
-						        	user.current.board(value);
-							      	chrome.runtime.sendMessage({
-								    	from: 'trello',
-									    subject: 'set',
-									    label: 'currentBoard',
-									    value: value
-									});
-							      	getCards(value).then((cards) => {
-							      		m.startComputation();
-						            	user.cards = cards;
-						            	m.endComputation();
-						            });
-						        }
-						    });
+					            	$(element).search({
+								    	apiSettings : {
+								    		onResponse: function(data) {
+								    			var response = {
+										            results : data.boards
+										        };
+								    			return response;
+								    		},
+								    		url: 'https://trello.com/1/search?query={query}&modelTypes=boards'
+								    	},
+								    	minCharacters : 3,
+							    		fields: {
+									      	title   : 'name'
+									    },
+								        onSelect: function(result, response) {
+								        	let value = result.id;
+								        	user.current.board(value);
+									      	chrome.runtime.sendMessage({
+										    	from: 'trello',
+											    subject: 'set',
+											    label: 'currentBoard',
+											    value: value
+											});
+									      	getCards(value).then((cards) => {
+									      		m.startComputation();
+								            	user.cards = cards;
+								            	m.endComputation();
+								            });
+								        }
+								    });
 
-			            }
+					            }
 
-			        } }, [
-			      	m('.ui icon input', [
-			        	m('input.prompt[type="text"][placeholder="Search Boards"]'),
-			        	m('i.search link icon')
-			      	]),
-			        m('.results')
-			    ]),
+					        } }, [
+					      	m('.ui icon input', [
+					        	m('input.prompt[type="text"][placeholder="Search All Boards"]'),
+					        	m('i.search link icon')
+					      	]),
+					        m('.results')
+					    ])
+					])
+				]),
 			    m('.ui hidden divider')
 			])
     	}

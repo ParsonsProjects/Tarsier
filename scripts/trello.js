@@ -2,19 +2,23 @@
 const trello = {};
 
 trello.sendMessage = function(data) {
-	console.log(data)
-	chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
-	  	chrome.tabs.sendMessage(tabs[0].id, data, function(response) {
+
+	chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+	  	chrome.tabs.sendMessage(tabs[0].id, data, (response) => {
 
 	  	});
+	});
+
+	chrome.runtime.sendMessage(data, (response) => {
+
 	});
 
 }
 
 trello.runSync = function() {
 
-	chrome.storage.sync.get(function(items) {
-		Object.keys(items).forEach(function(key) {
+	chrome.storage.sync.get((items) => {
+		Object.keys(items).forEach((key) => {
 		    localStorage.setItem(key, items[key]);
 		});
 		trello.sendMessage({
@@ -50,7 +54,7 @@ trello.clear = function() {
 
 trello.remove = function(label) {
 
-	chrome.storage.sync.remove(label, function() {
+	chrome.storage.sync.remove(label, () => {
 		if (chrome.runtime.error) console.log("Runtime error.");
 		localStorage.removeItem(label);
     });
@@ -91,14 +95,23 @@ trello.status = function() {
         interactive: false,
         scope: {read: true, write: true},
         success: () => {
+
         	trello.sendMessage({
 			    from: 'background',
 			    subject: 'status',
 			    value: true
 			});
+
+			chrome.browserAction.setBadgeText({ text: '✔' });
+			chrome.browserAction.setBadgeBackgroundColor({ color: '#8BC34A' });
+
         },
         error: () => {
         	// maybe error and store in storage?
+
+        	chrome.browserAction.setBadgeText({ text: '?' });
+        	chrome.browserAction.setBadgeBackgroundColor({ color: '#FF5722' });
+
         }
     });
 
@@ -211,15 +224,15 @@ trello.search = function(data) {
 
 }
 
-var timerDates = [];
-var timerData = [];
+let timerDates = [];
+let timerData = [];
 
-var timeSpent = () => {
+const timeSpent = () => {
 	// @fix more complete system needed for counting time
 	let time = '**Current time spent:** *';
 	let startArr = [];
 	let stopArr = [];
-	let timeSpent = 0;
+	let timeSpentInt = 0;
 
 	if(timerDates.length > 1) {
 		for (var i = 0; i < timerDates.length; i++) {
@@ -229,11 +242,11 @@ var timeSpent = () => {
 			if(type == 'paused' || type == 'stopped') stopArr.push(time);
 		}
 		for (var i = 0; i < startArr.length; i++) {
-			if(stopArr[i]) timeSpent = moment(stopArr[i]).diff(moment(startArr[i])) + parseInt(timeSpent);
+			if(stopArr[i]) timeSpentInt = moment(stopArr[i]).diff(moment(startArr[i])) + parseInt(timeSpentInt);
 		}
-		let seconds = moment.duration(timeSpent).seconds();
-		let minutes = moment.duration(timeSpent).minutes();
-		let hours = moment.duration(timeSpent).hours();
+		let seconds = moment.duration(timeSpentInt).seconds();
+		let minutes = moment.duration(timeSpentInt).minutes();
+		let hours = moment.duration(timeSpentInt).hours();
 		time += hours + 'h ' + minutes + 'm ' + seconds + 's';
 	}
 
@@ -243,7 +256,7 @@ var timeSpent = () => {
 	return time;
 }
 
-var timerComment = () => {
+const timerComment = () => {
 
 	let comment = '';
 
