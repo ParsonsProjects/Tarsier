@@ -6,9 +6,10 @@ var orginal = {
 	loggedIn: m.prop(false),
 	boards: [],
 	cards: [],
+	card: {},
 	current: {
 		card: m.prop(''),
-		board: m.prop(''),
+		board: m.prop('')
 	},
 	timer: {
 		id: m.prop(''),
@@ -21,6 +22,7 @@ var user = {
 	loggedIn: m.prop(false),
 	boards: [],
 	cards: [],
+	card: {},
 	current: {
 		card: m.prop(localStorage.getItem('currentCard')),
 		board: m.prop(localStorage.getItem('currentBoard'))
@@ -31,6 +33,11 @@ var user = {
 		paused: m.prop(localStorage.getItem('timerPaused'))
 	}
 }
+
+$.get('https://trello.com/1/search?query='+user.current.card()+'&modelTypes=cards', (data) => {
+	user.card = data.cards[0];
+	m.redraw();
+})
 
 var checkAuth = {
 	view: function(ctrl, args) {
@@ -68,12 +75,22 @@ var userActions = {
 		if(user.current.card()) {
 
 			markup = m('.buttons', [
+				currentCard(),
 				m('.ui divider'),
 				playButton(),
 				pauseButton(),
 				stopButton(),
-				timerClock()
+				timerClock(),
+				m('.ui hidden divider')
 			])
+
+			function currentCard() {
+
+				if(user.card) {
+					return m('', user.card.name)
+				}
+
+			}
 
 			function timerClock() {
 
@@ -99,7 +116,7 @@ var userActions = {
 							// set comments time
 							timerLog('Timer paused - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'paused', 'time': moment()});
 						}
-					}, [
+					}, 'Pause', [
 						m('i.pause icon')
 					])
 				}
@@ -116,7 +133,7 @@ var userActions = {
 							user.timer.started(false);
 							timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 						}
-					}, [
+					}, 'Stop', [
 						m('i.stop icon')
 					])
 				}
@@ -143,7 +160,7 @@ var userActions = {
 							});
 							timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
-					}, [
+					}, 'Start', [
 						m('i.play icon')
 					])
 				}
@@ -156,7 +173,7 @@ var userActions = {
 							// set comments time
 							timerLog('Timer resumed - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
-					}, [
+					}, 'Resume', [
 						m('i.play icon')
 					])
 				}
@@ -229,9 +246,8 @@ var timerStart = (timerData, timerDates) => {
 var userCards = {
     view: function(ctrl, args) {
     	var markup = m('');
-    	//if(user.cards.length) {
+    	if(!user.card) {
     		markup = m('', [
-			    m(userActions),
 				m('.ui sub header', 'Cards'),
 				m('.ui two column middle aligned very relaxed stackable grid', [
 					m('.column', [
@@ -307,9 +323,10 @@ var userCards = {
 					        m('.results')
 					    ])
 					])
-				])
+				]),
+				m('.ui hidden divider')
 			])
-    	//}
+    	}
 		return markup;
     }
 }
@@ -317,9 +334,8 @@ var userCards = {
 var userBoards = {
     view: function(ctrl, args) {
     	var markup = m('');
-    	if(user.boards.length > 0) {
+    	if(!user.boards) {
     		markup = m('', [
-				m(userCards),
 				m('.ui sub header', 'Boards'),
 				m('.ui two column middle aligned very relaxed stackable grid', [
 					m('.column', [
@@ -401,9 +417,21 @@ var userBoards = {
 					        m('.results')
 					    ])
 					])
-				]),
-			    m('.ui hidden divider')
+				])
 			])
+    	}
+    	if(user.boards && !user.card) {
+    		markup = m('', [
+    			m('a.ui primary button', 'Change Board'),
+    			m('.ui hidden divider')
+    		])
+    	}
+    	if(user.boards && user.card) {
+    		markup = m('', [
+    			m('a.ui primary button', 'Change Board'),
+    			m('a.ui primary button', 'Change Card'),
+    			m('.ui hidden divider')
+    		])
     	}
 		return markup;
     }
@@ -414,6 +442,8 @@ app.view = function() {
     return [
     	m('.ui hidden divider'),
     	m('main.ui container', [
+    		m(userActions),
+    		m(userCards),
     		m(userBoards),
     		m(checkAuth)
     	]),

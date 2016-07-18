@@ -18,18 +18,23 @@ trello.sendMessage = function(data) {
 trello.runSync = function() {
 
 	chrome.storage.sync.get((items) => {
+
 		Object.keys(items).forEach((key) => {
 		    localStorage.setItem(key, items[key]);
 		});
+
 		trello.sendMessage({
 		    from: 'background',
 		    subject: 'synced'
 		});
+
 	});
 
 }
 
 trello.set = function(label, value) {
+
+	if(typeof label === 'object') label = JSON.stringify(label);
 
 	chrome.storage.sync.set({label: value}, () => {
 		if (chrome.runtime.error) console.log("Runtime error.");
