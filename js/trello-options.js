@@ -85,7 +85,7 @@ var userActions = {
 			function currentCard() {
 
 				if(user.card) {
-					return m('', m.trust('<strong>Selected Card:</strong> ' + user.card.name))
+					return m('', m.trust('<strong>Selected Card:</strong> <a target="_blank" href="' +user.card.shortUrl+ '" title="' +user.card.name+ '">' + user.card.name + '</a>'))
 				}
 
 			}
@@ -246,12 +246,13 @@ var userCards = {
 		if(user.current.card()) {
 			m.request({method: 'GET', url: 'https://trello.com/1/search?query='+user.current.card()+'&modelTypes=cards'}).then((data) => {
 				user.card = data.cards[0];
+				$('.js-card').removeClass('loading');
 			});
 		}
 	},
 	controller: function() {
 		var ctrl = this;
-		ctrl.changeCard = function(value) {
+		ctrl.changeCard = function(value, text, $selectedItem) {
 			if(!user.timer.started()) {
 				user.current.card(value);
 				chrome.runtime.sendMessage({
@@ -260,6 +261,7 @@ var userCards = {
 				    label: 'currentCard',
 				    value: value
 				});
+				$('.js-card').addClass('loading');
 				setTimeout(function(){
 					userCards.getCard();
 				}, 1000);
@@ -269,12 +271,15 @@ var userCards = {
 		}
 	},
     view: function(ctrl, args) {
-    	var markup = m.component(Select, {
-          	data: user.cards,
+    	var data = {
+    		data: user.cards,
           	value: user.current.card,
           	onchange: ctrl.changeCard,
-          	label: 'Card'
-        });
+          	label: 'Card',
+    		addClass: 'js-card'
+    	}
+    	if(!user.current.board()) data.addClass += ' disabled';
+    	var markup = m.component(Select, data);
 		return markup;
     }
 }
@@ -283,8 +288,9 @@ userCards.getCard();
 
 var userBoards = {
 	controller: function() {
-		this.changeBoard = function(value) {
+		this.changeBoard = function(value, text, $selectedItem) {
 			if(!user.timer.started()) {
+				$('.js-card').removeClass('disabled');
 				chrome.runtime.sendMessage({
 			    	from: 'trello',
 				    subject: 'set',
@@ -310,7 +316,8 @@ var userBoards = {
           	data: user.boards,
           	value: user.current.board,
           	onchange: ctrl.changeBoard,
-          	label: 'Board'
+          	label: 'Board',
+          	addClass: 'js-board'
         });
 		return markup;
     }
@@ -321,7 +328,7 @@ var Select = {
     view: function(ctrl, attrs) {
         var selectedId = attrs.value();
         //Create a Select progrssively enhanced SELECT element
-        return m('.ui dropdown button', {config: Select.config(attrs)}, [
+        return m('.ui dropdown button ' + attrs.addClass, {config: Select.config(attrs)}, [
 			m('span.text', 'Select ' + attrs.label),
 			m('.menu', [
 				m('.ui icon search input', [
@@ -357,7 +364,7 @@ var Select = {
                 	context: '#main-view',
 	            	onChange: function(value, text, $selectedItem) {
 	            		var value = $selectedItem.data().id;
-				      	ctrl.onchange(value);
+				      	ctrl.onchange(value, text, $selectedItem);
 				    }
 	            });
 
@@ -374,8 +381,10 @@ app.view = function() {
     	m('.ui hidden divider'),
     	m('main#main-view.ui container', [
     		m(userActions),
-			m(userBoards),
-			m(userCards),
+    		m('.two ui buttons small basic', [
+				m(userBoards),
+				m(userCards)
+			]),
 			m('.ui hidden divider'),
     		m(checkAuth)
     	]),
