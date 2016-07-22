@@ -5,13 +5,19 @@ let timerStarted = '';
 
 $(() => {
 
-	chrome.runtime.sendMessage({
-	    from:    'trello',
-	    subject: 'status'
-	});
+	// small timeout
+	setTimeout(() => {
 
-	// check if popup already open
-	if(window.location.href.match(/(trello.com\/c)/g)) checkCardOpen();
+		chrome.runtime.sendMessage({
+		    from:    'trello',
+		    subject: 'status'
+		});
+
+		// check if popup already open
+		if(window.location.href.match(/(trello.com\/c)/g)) checkCardOpen();
+
+	}, 500);
+
 	$('.list-card').not('.js-open-quick-card-editor').on('click', () => {
 		checkCardOpen();
 	});
@@ -22,7 +28,7 @@ $(() => {
 var checkCardOpen = () => {
 
 	let $cardWindow = $('.window-module.other-actions .u-clearfix');
-
+console.log($cardWindow.length)
 	let cardInterval = setInterval(() => {
 
 		if($cardWindow.length) {
