@@ -107,14 +107,14 @@ trello.status = function() {
 			    value: true
 			});
 
-			chrome.browserAction.setBadgeText({ text: '✔' });
+			chrome.browserAction.setBadgeText({ text: ' ' });
 			chrome.browserAction.setBadgeBackgroundColor({ color: '#8BC34A' });
 
         },
         error: () => {
-        	// maybe error and store in storage?
 
-        	chrome.browserAction.setBadgeText({ text: '?' });
+        	// maybe error and store in storage?
+        	chrome.browserAction.setBadgeText({ text: ' ' });
         	chrome.browserAction.setBadgeBackgroundColor({ color: '#FF5722' });
 
         }
@@ -143,6 +143,8 @@ trello.timerLog = function(currentCard, currentComment, date, data) {
 
 trello.timerStart = function(currentCard, date, data) {
 
+	timerDates = [];
+	timerData = [];
 	timerDates.push(date);
 	timerData.push(data);
 
@@ -164,6 +166,8 @@ trello.timerStart = function(currentCard, date, data) {
 		    subject: 'timerStart',
 		    value: successMsg
 		});
+		chrome.browserAction.setBadgeText({ text: ' ' });
+		chrome.browserAction.setBadgeBackgroundColor({ color: '#FFC107' });
     });
 
 }
@@ -177,6 +181,9 @@ trello.timerStop = function() {
 	    from: 'background',
 	    subject: 'timerStop'
 	});
+
+	chrome.browserAction.setBadgeText({ text: ' ' });
+	chrome.browserAction.setBadgeBackgroundColor({ color: '#8BC34A' });
 
 }
 

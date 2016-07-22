@@ -52,6 +52,7 @@ var checkAuth = {
 					onclick: (e) => {
 						e.preventDefault();
 						user = orginal;
+						timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 						chrome.runtime.sendMessage({
 						    from: 'trello',
 						    subject: 'clear'
@@ -140,7 +141,7 @@ var userActions = {
 			function playButton() {
 
 				if(!user.timer.started()) {
-					return m('.ui icon button tiny[title="Play"]', {
+					return m('.ui icon button tiny[title="Start"]', {
 						onclick: (e) => {
 							e.preventDefault();
 							// clear out data
@@ -251,16 +252,20 @@ var userCards = {
 	controller: function() {
 		var ctrl = this;
 		ctrl.changeCard = function(value) {
-			user.current.card(value);
-			chrome.runtime.sendMessage({
-		    	from: 'trello',
-			    subject: 'set',
-			    label: 'currentCard',
-			    value: value
-			});
-			setTimeout(function(){
-				userCards.getCard();
-			}, 1000);
+			if(!user.timer.started()) {
+				user.current.card(value);
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'set',
+				    label: 'currentCard',
+				    value: value
+				});
+				setTimeout(function(){
+					userCards.getCard();
+				}, 1000);
+			} else {
+				alert('Time log already running!');
+			}
 		}
 	},
     view: function(ctrl, args) {
@@ -279,21 +284,25 @@ userCards.getCard();
 var userBoards = {
 	controller: function() {
 		this.changeBoard = function(value) {
-			chrome.runtime.sendMessage({
-		    	from: 'trello',
-			    subject: 'set',
-			    label: 'currentBoard',
-			    value: value
-			});
-			setTimeout(function(){
-				user.current.card('');
-				user.current.board(value);
-				getCards(value).then((cards) => {
-					m.startComputation();
-					user.cards = cards;
-					m.endComputation();
+			if(!user.timer.started()) {
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'set',
+				    label: 'currentBoard',
+				    value: value
 				});
-			}, 1000);
+				setTimeout(function(){
+					user.current.card('');
+					user.current.board(value);
+					getCards(value).then((cards) => {
+						m.startComputation();
+						user.cards = cards;
+						m.endComputation();
+					});
+				}, 1000);
+			} else {
+				alert('Time log already running!');
+			}
 		}
 	},
     view: function(ctrl, args) {
@@ -344,6 +353,8 @@ var Select = {
             if (!isInitialized) {
 
                 el.dropdown({
+                	fullTextSearch: true,
+                	context: '#main-view',
 	            	onChange: function(value, text, $selectedItem) {
 	            		var value = $selectedItem.data().id;
 				      	ctrl.onchange(value);
@@ -361,7 +372,7 @@ var Select = {
 app.view = function() {
     return [
     	m('.ui hidden divider'),
-    	m('main.ui container', [
+    	m('main#main-view.ui container', [
     		m(userActions),
 			m(userBoards),
 			m(userCards),
