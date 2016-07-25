@@ -1,4 +1,6 @@
 
+var $body = $('body');
+
 //this application only has one component: app
 var app = {};
 
@@ -6,10 +8,12 @@ var orginal = {
 	loggedIn: m.prop(false),
 	boards: [],
 	cards: [],
+	lists: [],
 	card: {},
 	current: {
 		card: m.prop(''),
-		board: m.prop('')
+		board: m.prop(''),
+		list: m.prop('')
 	},
 	timer: {
 		id: m.prop(''),
@@ -22,10 +26,12 @@ var user = {
 	loggedIn: m.prop(false),
 	boards: [],
 	cards: [],
+	lists: [],
 	card: {},
 	current: {
 		card: m.prop(localStorage.getItem('currentCard')),
-		board: m.prop(localStorage.getItem('currentBoard'))
+		board: m.prop(localStorage.getItem('currentBoard')),
+		list: m.prop(localStorage.getItem('currentList'))
 	},
 	timer: {
 		id: m.prop(localStorage.getItem('timerID')),
@@ -34,34 +40,112 @@ var user = {
 	}
 }
 
+var showCards = () => {
+
+	$body.addClass('is-open');
+	$('.js-board, .js-list').addClass('is-hidden');
+	$('.js-card').removeClass('is-hidden');
+
+}
+
+var showLists = () => {
+
+	$body.addClass('is-open');
+	$('.js-card, .js-board').addClass('is-hidden');
+	$('.js-list').removeClass('is-hidden');
+
+}
+
+var showBoards = () => {
+
+	$body.addClass('is-open');
+	$('.js-card, .js-list').addClass('is-hidden');
+	$('.js-board').removeClass('is-hidden');
+
+}
+
+var getTrelloCard = (id) => {
+
+	return new Promise((resolve) => {
+
+		if(!id || id == null) {
+			resolve([]);
+		} else {
+
+			chrome.runtime.sendMessage({
+			    from:    'trello',
+			    subject: 'getCard',
+			    value: id
+			});
+
+			chrome.runtime.onMessage.addListener((msg, sender) => {
+
+				if ((msg.from === 'background') && (msg.subject === 'getCard')) {
+					resolve(msg.value);
+				}
+
+			});
+
+		}
+
+	});
+
+}
+
 var checkAuth = {
 	view: function(ctrl, args) {
-		var output = m('', [
-			m('h4.ui dividing header', 'Connect to Trello'),
-			m('a.ui primary button', {
-				onclick: (e) => {
-					e.preventDefault();
-					setAuth();
-				}
-			}, 'Connect')
+		var output = m('.interface.logged-out', [
+			m('span.connect', { onclick: function(e){
+				e.preventDefault();
+				setAuth();
+			} }, 'Connect to Trello')
 		])
 		if(user.loggedIn()) {
 			output = m('', [
-				m('h4.ui dividing header', 'Connected to Trello'),
-				m('a.ui primary button', {
-					onclick: (e) => {
-						e.preventDefault();
-						user = orginal;
-						timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
-						chrome.runtime.sendMessage({
-						    from: 'trello',
-						    subject: 'clear'
-						});
-					}
-				}, 'Disconnect')
+				m('.interface', [
+					m('span.toggle-settings', { onclick: function(){
+						$('.interface').toggleClass('is-open');
+						$('body').removeClass('is-open');
+					} }, 'S'),
+					m.component(userActions),
+				]),
+				m.component(userMenu),
+				m.component(userBoards),
+				m.component(userLists),
+				m.component(userCards)
 			]);
 		}
 		return output;
+	}
+}
+
+var userMenu = {
+	view: function(ctrl, args) {
+		var markup = m('');
+		markup = m('', [
+			m('span.change-board', { onclick: function(){
+				showBoards();
+			} }, 'B'),
+			m('span.change-list', { onclick: function(){
+				showLists();
+			} }, 'L'),
+			m('span.change-card', { onclick: function(){
+				showCards();
+			} }, 'C'),
+			m('span.disconnect', { onclick: function(e){
+				e.preventDefault();
+				if(user.timer.started()) timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
+				user = orginal;
+				chrome.runtime.sendMessage({
+				    from: 'trello',
+				    subject: 'clear'
+				});
+				$body.removeClass('is-open');
+				$('.interface').removeClass('is-open');
+				m.redraw();
+			} }, 'D'),
+		]);
+		return markup;
 	}
 }
 
@@ -70,22 +154,19 @@ var userActions = {
 		var markup = m('');
 		if(user.current.card()) {
 
-			markup = m('.buttons', [
+			markup = m('span', [
 				currentCard(),
-				m('.ui divider'),
-				m('.ui buttons tiny', [
+				m('span.user-actions', [
 					playButton(),
 					pauseButton(),
 					stopButton(),
 					timerClock()
-				]),
-				m('.ui hidden divider')
+				])
 			])
 
 			function currentCard() {
-
 				if(user.card) {
-					return m('', m.trust('<strong>Selected Card:</strong> <a target="_blank" href="' +user.card.shortUrl+ '" title="' +user.card.name+ '">' + user.card.name + '</a>'))
+					return m('span', m.trust('<a target="_blank" href="' +user.card.shortUrl+ '" title="' +user.card.name+ '">' + truncate.apply(user.card.name, [30, true]) + '</a>'))
 				}
 
 			}
@@ -101,7 +182,7 @@ var userActions = {
 			function pauseButton() {
 
 				if(user.timer.started() && !user.timer.paused()) {
-					return m('.ui icon button tiny[title="Pause"]', {
+					return m('span.icon button [title="Pause"]', {
 						onclick: (e) => {
 							e.preventDefault();
 							user.timer.paused(true);
@@ -114,7 +195,7 @@ var userActions = {
 							// set comments time
 							timerLog('Timer paused - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'paused', 'time': moment()});
 						}
-					}, [
+					}, 'Pause', [
 						m('i.pause icon')
 					])
 				}
@@ -124,14 +205,14 @@ var userActions = {
 			function stopButton() {
 
 				if(user.timer.started()) {
-					return m('.ui icon button tiny[title="Stop"]', {
+					return m('.icon button[title="Stop"]', {
 						onclick: (e) => {
 							e.preventDefault();
 							// set comments time
 							user.timer.started(false);
 							timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 						}
-					}, [
+					}, 'Stop', [
 						m('i.stop icon')
 					])
 				}
@@ -141,7 +222,7 @@ var userActions = {
 			function playButton() {
 
 				if(!user.timer.started()) {
-					return m('.ui icon button tiny[title="Start"]', {
+					return m('.icon button [title="Start"]', {
 						onclick: (e) => {
 							e.preventDefault();
 							// clear out data
@@ -158,20 +239,20 @@ var userActions = {
 							});
 							timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
-					}, [
+					}, 'Start', [
 						m('i.play icon')
 					])
 				}
 
 				if(user.timer.started() && user.timer.paused()) {
-					return m('.ui icon button tiny[title="Resume"]', {
+					return m('.icon button [title="Resume"]', {
 						onclick: (e) => {
 							e.preventDefault();
 							user.timer.paused(false);
 							// set comments time
 							timerLog('Timer resumed - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
-					}, [
+					}, 'Resume', [
 						m('i.play icon')
 					])
 				}
@@ -244,9 +325,10 @@ var timerStart = (timerData, timerDates) => {
 var userCards = {
 	getCard: function() {
 		if(user.current.card()) {
-			m.request({method: 'GET', url: 'https://trello.com/1/search?query='+user.current.card()+'&modelTypes=cards'}).then((data) => {
-				user.card = data.cards[0];
-				$('.js-card').removeClass('loading');
+			getTrelloCard(user.current.card()).then((card) => {
+				user.card = card;
+				$body.removeClass('is-open');
+				$('.interface').removeClass('is-open');
 			});
 		}
 	},
@@ -261,10 +343,7 @@ var userCards = {
 				    label: 'currentCard',
 				    value: value
 				});
-				$('.js-card').addClass('loading');
-				setTimeout(function(){
-					userCards.getCard();
-				}, 1000);
+				userCards.getCard();
 			} else {
 				alert('Time log already running!');
 			}
@@ -286,26 +365,55 @@ var userCards = {
 
 userCards.getCard();
 
+var userLists = {
+	controller: function() {
+		this.changeList = function(value, text, $selectedItem) {
+			chrome.runtime.sendMessage({
+		    	from: 'trello',
+			    subject: 'set',
+			    label: 'currentList',
+			    value: value
+			});
+			user.current.card('');
+			user.current.list(value);
+			getCards(value).then((cards) => {
+				m.startComputation();
+				user.cards = cards;
+				m.endComputation();
+				showCards();
+			});
+		}
+	},
+    view: function(ctrl, args) {
+		var markup = m.component(Select, {
+          	data: user.lists,
+          	value: user.current.list,
+          	onchange: ctrl.changeList,
+          	label: 'List',
+          	addClass: 'js-list'
+        });
+		return markup;
+    }
+}
+
 var userBoards = {
 	controller: function() {
 		this.changeBoard = function(value, text, $selectedItem) {
 			if(!user.timer.started()) {
-				$('.js-card').removeClass('disabled');
 				chrome.runtime.sendMessage({
 			    	from: 'trello',
 				    subject: 'set',
 				    label: 'currentBoard',
 				    value: value
 				});
-				setTimeout(function(){
-					user.current.card('');
-					user.current.board(value);
-					getCards(value).then((cards) => {
-						m.startComputation();
-						user.cards = cards;
-						m.endComputation();
-					});
-				}, 1000);
+				user.current.card('');
+				user.current.board(value);
+				getLists(value).then((lists) => {
+					m.startComputation();
+					user.lists = lists;
+					m.endComputation();
+					showLists();
+				});
 			} else {
 				alert('Time log already running!');
 			}
@@ -328,67 +436,30 @@ var Select = {
     view: function(ctrl, attrs) {
         var selectedId = attrs.value();
         //Create a Select progrssively enhanced SELECT element
-        return m('.ui dropdown button ' + attrs.addClass, {config: Select.config(attrs)}, [
-			m('span.text', 'Select ' + attrs.label),
+        return m('.select is-hidden ' + attrs.addClass, [
 			m('.menu', [
-				m('.ui icon search input', [
-					m('i.search icon'),
-					m('input[type="text"][placeholder="Search '+attrs.label+'"]')
-				]),
 				m('.scrolling menu', [
 					attrs.data.map(function(item, index) {
 			        	if(!item.closed) {
-			                return m('.item[data-id="'+item.id+'"]', m.trust(truncate.apply(item.name, [30, true])))
+			                return m('.item[data-id="'+item.id+'"]', {
+			                	onclick: function() {
+			                		var value = $(this).data().id;
+							    	var text = $(this).text();
+							    	attrs.onchange(value, text, $(this));
+			                	}
+			                }, m.trust(truncate.apply(item.name, [30, true])))
 			            }
 			        })
 				])
 			])
         ]);
-    },
-    /**
-    Select config factory. The params in this doc refer to properties of the `ctrl` argument
-    @param {Object} data - the data with which to populate the <option> list
-    @param {prop} value - the prop of the item in `data` that we want to select
-    @param {function(Object id)} onchange - the event handler to call when the selection changes.
-        `id` is the the same as `value`
-    */
-    //    Note: The config is never run server side.
-    config: function(ctrl) {
-        return function(element, isInitialized) {
-
-            var el = $(element);
-            if (!isInitialized) {
-
-                el.dropdown({
-                	fullTextSearch: true,
-                	context: '#main-view',
-	            	onChange: function(value, text, $selectedItem) {
-	            		var value = $selectedItem.data().id;
-				      	ctrl.onchange(value, text, $selectedItem);
-				    }
-	            });
-
-            }
-            el.val(ctrl.value()).trigger("change");
-
-        };
     }
 }
 
 //here's the view
 app.view = function() {
     return [
-    	m('.ui hidden divider'),
-    	m('main#main-view.ui container', [
-    		m(userActions),
-    		m('.two ui buttons small basic', [
-				m(userBoards),
-				m(userCards)
-			]),
-			m('.ui hidden divider'),
-    		m(checkAuth)
-    	]),
-    	m('.ui hidden divider')
+		m.component(checkAuth)
     ]
 };
 
@@ -415,9 +486,11 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 			loggedIn: m.prop(false),
 			boards: [],
 			cards: [],
+			lists: [],
 			current: {
 				card: m.prop(localStorage.getItem('currentCard')),
-				board: m.prop(localStorage.getItem('currentBoard'))
+				board: m.prop(localStorage.getItem('currentBoard')),
+				list: m.prop(localStorage.getItem('currentList'))
 			},
 			timer: {
 				id: m.prop(localStorage.getItem('timerID')),
@@ -435,6 +508,34 @@ var setAuth = () => {
 	chrome.runtime.sendMessage({
 	    from:    'trello',
 	    subject: 'showApp'
+	});
+
+}
+
+var getLists = (id) => {
+
+	return new Promise((resolve) => {
+
+		if(!id || id == null) {
+			resolve([]);
+		} else {
+
+			chrome.runtime.sendMessage({
+			    from:    'trello',
+			    subject: 'getLists',
+			    value: id
+			});
+
+			chrome.runtime.onMessage.addListener((msg, sender) => {
+
+				if ((msg.from === 'background') && (msg.subject === 'getLists')) {
+					resolve(msg.value);
+				}
+
+			});
+
+		}
+
 	});
 
 }
@@ -505,9 +606,12 @@ var updateLoggedIn = () => {
 				user.loggedIn(msg.value);
 	            getBoards().then((boards) => {
 	            	user.boards = boards;
-	            	getCards(user.current.board()).then((cards) => {
-		            	user.cards = cards;
-		            	m.endComputation();
+	            	getLists(user.current.board()).then((lists) => {
+		            	user.lists = lists;
+		            	getCards(user.current.list()).then((cards) => {
+			            	user.cards = cards;
+			            	m.endComputation();
+			            });
 		            });
 	            });
 			} else {

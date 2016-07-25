@@ -24,7 +24,6 @@
 	    "default_icon": "images/trello-mark-blue-16.png",
 	    "default_popup": "popup.html"
 	},
-	"options_page": "options.html",
 	"background": {
         "persistent": true,
         "page": "background.html"

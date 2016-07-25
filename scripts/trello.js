@@ -78,13 +78,37 @@ trello.getBoards = function() {
 
 }
 
+trello.getLists = (id) => {
+
+	Trello.get("boards/"+id+"/lists/all", (lists) => {
+        trello.sendMessage({
+		    from: 'background',
+		    subject: 'getLists',
+		    value: lists
+		});
+    });
+
+}
+
 trello.getCards = (id) => {
 
-	Trello.get("boards/"+id+"/cards/all", (cards) => {
+	Trello.get("lists/"+id+"/cards/all", (cards) => {
         trello.sendMessage({
 		    from: 'background',
 		    subject: 'getCards',
 		    value: cards
+		});
+    });
+
+}
+
+trello.getCard = (id) => {
+
+	Trello.get("cards/"+id, (card) => {
+        trello.sendMessage({
+		    from: 'background',
+		    subject: 'getCard',
+		    value: card
 		});
     });
 
@@ -108,7 +132,7 @@ trello.status = function() {
 			});
 
 			chrome.browserAction.setBadgeText({ text: ' ' });
-			chrome.browserAction.setBadgeBackgroundColor({ color: '#8BC34A' });
+			chrome.browserAction.setBadgeBackgroundColor({ color: '#4FC1E9' });
 
         },
         error: () => {
@@ -183,7 +207,7 @@ trello.timerStop = function() {
 	});
 
 	chrome.browserAction.setBadgeText({ text: ' ' });
-	chrome.browserAction.setBadgeBackgroundColor({ color: '#8BC34A' });
+	chrome.browserAction.setBadgeBackgroundColor({ color: '#4FC1E9' });
 
 }
 

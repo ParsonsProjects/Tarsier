@@ -2,11 +2,21 @@
 trello.runSync();
 trello.status();
 
+/*chrome.windows.create({
+    url: '../popup.html',
+    type: 'panel',
+    width: 300,
+    height: 100
+    // incognito, top, left, ...
+});*/
+
+// chrome://flags/#enable-panels
+
 chrome.tabs.onHighlighted.addListener((highlightInfo) => {
 
-	chrome.tabs.query({active: true}, (tab) => {
+	/*chrome.tabs.query({active: true}, (tab) => {
 		if(tab[0].url.match(/(trello\.com)/g)) trello.runSync();
-	});
+	});*/
 
 });
 
@@ -52,7 +62,9 @@ chrome.runtime.onMessage.addListener((msg, sender, responseCallback) => {
 
 	if ((msg.from === 'trello') && (msg.subject === 'status')) trello.status();
 	if ((msg.from === 'trello') && (msg.subject === 'getBoards')) trello.getBoards();
+	if ((msg.from === 'trello') && (msg.subject === 'getLists')) trello.getLists(msg.value);
 	if ((msg.from === 'trello') && (msg.subject === 'getCards')) trello.getCards(msg.value);
+	if ((msg.from === 'trello') && (msg.subject === 'getCard')) trello.getCard(msg.value);
 	if ((msg.from === 'trello') && (msg.subject === 'timerStart')) trello.timerStart(msg.value, msg.dates, msg.data);
 	if ((msg.from === 'trello') && (msg.subject === 'timerLog')) trello.timerLog(msg.value.card, msg.value.comment, msg.dates, msg.data);
 	if ((msg.from === 'trello') && (msg.subject === 'timerStop')) trello.timerStop();
