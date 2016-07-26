@@ -1,0 +1,194 @@
+body {
+	height: 50px;
+	width: 300px;
+	overflow: auto;
+	margin: 0;
+	padding: 0;
+	oveflow: hidden;
+	padding: 15px;
+	font-size: 15px;
+	box-sizing: border-box;
+	transition: height 0.3s;
+}
+body.is-open {
+	height: 200px;
+}
+
+a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.menu:not(.scrolling) {
+	padding: 5px 0;
+	border-top: solid 1px #f1f1f1;
+}
+
+.menu .item {
+	padding: 10px 15px;
+	cursor: pointer;
+}
+
+.menu .item:hover {
+	background: #4FC1E9;
+	color: #fff;
+}
+
+.is-hidden {
+	display: none;
+}
+
+.tiny {
+	font-size: 10px;
+}
+
+.user-menu {
+	max-width: calc(100% - 90px);
+}
+
+.user-menu > span {
+	cursor: pointer;
+	margin-right: 10px;
+}
+
+.disconnect {
+	float: right;
+}
+
+.select {
+	position: absolute;
+	left: 0;
+	top: 50px;
+	width: 100%;
+	height: 150px;
+	overflow: auto;
+}
+
+.interface {
+	background: #4FC1E9;
+	position: absolute;
+	left: 0;
+	top: 0;
+	width: 100%;
+	height: 50px;
+	color: #fff;
+	padding: 15px;
+	font-size: 15px;
+	box-sizing: border-box;
+	transition: transform 0.3s;
+}
+
+.interface.logged-out {
+	background: #FC6E51;
+}
+
+.interface.is-open {
+	transform: translateX(200px);
+}
+
+.toggle-settings {
+	margin-right: 15px;
+	cursor: pointer;
+	width: 10px;
+	height: 28px;
+	top: -3px;
+	display: inline-block;
+	position: relative;
+	vertical-align: super;
+}
+
+.toggle-settings .dot {
+	display: inline-block;
+	width: 5px;
+	height: 5px;
+	background: #fff;
+	border-radius: 100%;
+}
+
+.toggle-settings:before {
+	content: '';
+	width: 5px;
+	height: 5px;
+	background: #fff;
+	border-radius: 100%;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.toggle-settings:after {
+	content: '';
+	width: 5px;
+	height: 5px;
+	background: #fff;
+	border-radius: 100%;
+	position: absolute;
+	left: 0;
+	bottom: 0;
+}
+
+.user-actions {
+	position: absolute;
+	right: 15px;
+	width: 50px;
+    height: 20px;
+    text-align: right;
+	top: 50%;
+	transform: translateY(-50%);
+}
+
+.actions {
+	display: inline-block;
+	vertical-align: super;
+}
+
+.button {
+	display: inline-block;
+}
+
+.play.icon {
+	width: 0;
+	height: 0;
+	cursor: pointer;
+	border-top: 10px solid transparent;
+	border-left: 13px solid #fff;
+	border-bottom: 10px solid transparent;
+    display: inline-block;
+}
+
+.stop.icon {
+	width: 20px;
+	height: 20px;
+	cursor: pointer;
+	background: #fff;
+    display: inline-block;
+}
+
+.pause.icon {
+	width: 15px;
+	height: 20px;
+	margin-right: 11px;
+	cursor: pointer;
+	position: relative;
+    display: inline-block;
+}
+
+.pause.icon:before {
+	content: '';
+	width: 5px;
+	height: 20px;
+	background: #fff;
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+.pause.icon:after {
+	content: '';
+	width: 5px;
+	height: 20px;
+	background: #fff;
+	position: absolute;
+	right: 0;
+	top: 0;
+}

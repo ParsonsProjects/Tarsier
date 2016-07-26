@@ -106,7 +106,9 @@ var checkAuth = {
 					m('span.toggle-settings', { onclick: function(){
 						$('.interface').toggleClass('is-open');
 						$('body').removeClass('is-open');
-					} }, 'S'),
+					} }, [
+						m('span.dot')
+					]),
 					m.component(userActions),
 				]),
 				m.component(userMenu),
@@ -122,17 +124,23 @@ var checkAuth = {
 var userMenu = {
 	view: function(ctrl, args) {
 		var markup = m('');
-		markup = m('', [
-			m('span.change-board', { onclick: function(){
+		markup = m('.user-menu', [
+			m('span.change-board[title="Change Board"]', { onclick: function(){
 				showBoards();
-			} }, 'B'),
-			m('span.change-list', { onclick: function(){
+			} }, 'B', [
+				m('span.tiny', 'oard')
+			]),
+			m('span.change-list[title="Change List"]', { onclick: function(){
 				showLists();
-			} }, 'L'),
-			m('span.change-card', { onclick: function(){
+			} }, 'L', [
+				m('span.tiny', 'ist')
+			]),
+			m('span.change-card[title="Change Card"]', { onclick: function(){
 				showCards();
-			} }, 'C'),
-			m('span.disconnect', { onclick: function(e){
+			} }, 'C', [
+				m('span.tiny', 'ard')
+			]),
+			m('span.disconnect[title="Disconnect"]', { onclick: function(e){
 				e.preventDefault();
 				if(user.timer.started()) timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 				user = orginal;
@@ -143,7 +151,9 @@ var userMenu = {
 				$body.removeClass('is-open');
 				$('.interface').removeClass('is-open');
 				m.redraw();
-			} }, 'D'),
+			} }, 'D', [
+				m('span.tiny', 'isconnect')
+			]),
 		]);
 		return markup;
 	}
@@ -154,7 +164,7 @@ var userActions = {
 		var markup = m('');
 		if(user.current.card()) {
 
-			markup = m('span', [
+			markup = m('span.actions', [
 				currentCard(),
 				m('span.user-actions', [
 					playButton(),
@@ -166,7 +176,7 @@ var userActions = {
 
 			function currentCard() {
 				if(user.card) {
-					return m('span', m.trust('<a target="_blank" href="' +user.card.shortUrl+ '" title="' +user.card.name+ '">' + truncate.apply(user.card.name, [30, true]) + '</a>'))
+					return m('span.name', m.trust('<a target="_blank" href="' +user.card.shortUrl+ '" title="' +user.card.name+ '">' + truncate.apply(user.card.name, [30, true]) + '</a>'))
 				}
 
 			}
@@ -195,7 +205,7 @@ var userActions = {
 							// set comments time
 							timerLog('Timer paused - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'paused', 'time': moment()});
 						}
-					}, 'Pause', [
+					}, [
 						m('i.pause icon')
 					])
 				}
@@ -212,7 +222,7 @@ var userActions = {
 							user.timer.started(false);
 							timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 						}
-					}, 'Stop', [
+					}, [
 						m('i.stop icon')
 					])
 				}
@@ -239,7 +249,7 @@ var userActions = {
 							});
 							timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
-					}, 'Start', [
+					}, [
 						m('i.play icon')
 					])
 				}
@@ -252,7 +262,7 @@ var userActions = {
 							// set comments time
 							timerLog('Timer resumed - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
-					}, 'Resume', [
+					}, [
 						m('i.play icon')
 					])
 				}
