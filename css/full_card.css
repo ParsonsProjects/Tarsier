@@ -1,0 +1,39 @@
+
+@media (min-width: 880px) {
+
+	.window {
+		width: 100% !important;
+		margin: 0 !important;
+		height: 100% !important;
+		overflow: auto !important;
+		border-radius: 0 !important;
+	}
+
+	.window-main-col {
+		width: 85% !important;
+		box-sizing: border-box;
+	}
+
+	.window-module.checklist-list {
+		float: right !important;
+		width: 48% !important;
+	}
+
+	.window-module.add-comment-section {
+		clear: none !important;
+		float: left !important;
+		width: 48% !important;
+	}
+
+	.window-module.add-comment-section + .window-module {
+		clear: none !important;
+		float: left !important;
+		width: 48% !important;
+	}
+
+	.window-sidebar {
+		width: 15% !important;
+		box-sizing: border-box;
+	}
+
+}

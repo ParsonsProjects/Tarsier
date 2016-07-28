@@ -45,7 +45,8 @@
 			],
 			"css": [
 				"css/trello.css",
-				"css/label_titles.css"
+				"css/label_titles.css",
+				"css/full_card.css"
 			]
 		},
 		{

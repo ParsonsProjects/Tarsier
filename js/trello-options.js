@@ -43,6 +43,8 @@ var user = {
 var showCards = () => {
 
 	$body.addClass('is-open');
+	$('.js-list').removeClass('is-active');
+	$('.js-list.change-card').addClass('is-active');
 	$('.js-board, .js-list').addClass('is-hidden');
 	$('.js-card').removeClass('is-hidden');
 
@@ -51,6 +53,8 @@ var showCards = () => {
 var showLists = () => {
 
 	$body.addClass('is-open');
+	$('.js-list').removeClass('is-active');
+	$('.js-list.change-list').addClass('is-active');
 	$('.js-card, .js-board').addClass('is-hidden');
 	$('.js-list').removeClass('is-hidden');
 
@@ -59,6 +63,8 @@ var showLists = () => {
 var showBoards = () => {
 
 	$body.addClass('is-open');
+	$('.js-list').removeClass('is-active');
+	$('.js-list.change-board').addClass('is-active');
 	$('.js-card, .js-list').addClass('is-hidden');
 	$('.js-board').removeClass('is-hidden');
 
@@ -88,7 +94,7 @@ var getTrelloCard = (id) => {
 
 		}
 
-	});
+	});f
 
 }
 
@@ -125,22 +131,22 @@ var userMenu = {
 	view: function(ctrl, args) {
 		var markup = m('');
 		markup = m('.user-menu', [
-			m('span.change-board[title="Change Board"]', { onclick: function(){
+			m('span.js-list item change-board[title="Change Board"]', { onclick: function(){
 				showBoards();
 			} }, 'B', [
 				m('span.tiny', 'oard')
 			]),
-			m('span.change-list[title="Change List"]', { onclick: function(){
+			m('span.js-list item change-list[title="Change List"]', { onclick: function(){
 				showLists();
 			} }, 'L', [
 				m('span.tiny', 'ist')
 			]),
-			m('span.change-card[title="Change Card"]', { onclick: function(){
+			m('span.js-list item change-card[title="Change Card"]', { onclick: function(){
 				showCards();
 			} }, 'C', [
 				m('span.tiny', 'ard')
 			]),
-			m('span.disconnect[title="Disconnect"]', { onclick: function(e){
+			m('span.item disconnect[title="Disconnect"]', { onclick: function(e){
 				e.preventDefault();
 				if(user.timer.started()) timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 				user = orginal;
@@ -339,6 +345,7 @@ var userCards = {
 				user.card = card;
 				$body.removeClass('is-open');
 				$('.interface').removeClass('is-open');
+				m.redraw();
 			});
 		}
 	},
@@ -365,7 +372,8 @@ var userCards = {
           	value: user.current.card,
           	onchange: ctrl.changeCard,
           	label: 'Card',
-    		addClass: 'js-card'
+    		addClass: 'js-card',
+          	placeholder: 'Please select a list'
     	}
     	if(!user.current.board()) data.addClass += ' disabled';
     	var markup = m.component(Select, data);
@@ -384,6 +392,7 @@ var userLists = {
 			    label: 'currentList',
 			    value: value
 			});
+			user.card = '';
 			user.current.card('');
 			user.current.list(value);
 			getCards(value).then((cards) => {
@@ -400,7 +409,8 @@ var userLists = {
           	value: user.current.list,
           	onchange: ctrl.changeList,
           	label: 'List',
-          	addClass: 'js-list'
+          	addClass: 'js-list',
+          	placeholder: 'Please select a board'
         });
 		return markup;
     }
@@ -421,6 +431,7 @@ var userBoards = {
 				getLists(value).then((lists) => {
 					m.startComputation();
 					user.lists = lists;
+					user.cards = [];
 					m.endComputation();
 					showLists();
 				});
@@ -435,7 +446,8 @@ var userBoards = {
           	value: user.current.board,
           	onchange: ctrl.changeBoard,
           	label: 'Board',
-          	addClass: 'js-board'
+          	addClass: 'js-board',
+          	placeholder: 'Please connect to trello'
         });
 		return markup;
     }
@@ -444,25 +456,37 @@ var userBoards = {
 var Select = {
 	//    Returns a select box
     view: function(ctrl, attrs) {
-        var selectedId = attrs.value();
         //Create a Select progrssively enhanced SELECT element
         return m('.select is-hidden ' + attrs.addClass, [
 			m('.menu', [
-				m('.scrolling menu', [
-					attrs.data.map(function(item, index) {
-			        	if(!item.closed) {
-			                return m('.item[data-id="'+item.id+'"]', {
-			                	onclick: function() {
-			                		var value = $(this).data().id;
-							    	var text = $(this).text();
-							    	attrs.onchange(value, text, $(this));
-			                	}
-			                }, m.trust(truncate.apply(item.name, [30, true])))
-			            }
-			        })
-				])
+				Select.items(attrs)
 			])
         ]);
+    },
+    items: function(ctrl) {
+    	var selectedId = ctrl.value();
+    	if(ctrl.data.length) {
+    		return m('.scrolling menu', [
+				ctrl.data.map(function(item, index) {
+		        	if(!item.closed) {
+		        		var activeClass = (selectedId == item.id) ? ' is-active' : '';
+		                return m('a.item'+activeClass+'[data-id="'+item.id+'"][title="'+item.name+'"]', {
+		                	onclick: function(e) {
+		                		e.preventDefault();
+		                		var value = $(this).data().id;
+						    	var text = $(this).text();
+						    	ctrl.onchange(value, text, $(this));
+						    	m.withAttr('value', ctrl.value);
+		                	}
+		                }, m.trust(truncate.apply(item.name, [30, true])))
+		            }
+		        })
+		    ])
+		} else {
+			return m('.scrolling menu', [
+				m('.item', ctrl.placeholder)
+			])
+		}
     }
 }
 

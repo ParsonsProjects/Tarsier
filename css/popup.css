@@ -5,7 +5,6 @@ body {
 	margin: 0;
 	padding: 0;
 	oveflow: hidden;
-	padding: 15px;
 	font-size: 15px;
 	box-sizing: border-box;
 	transition: height 0.3s;
@@ -19,17 +18,36 @@ a {
 	text-decoration: none;
 }
 
-.menu:not(.scrolling) {
-	padding: 5px 0;
-	border-top: solid 1px #f1f1f1;
+.select::-webkit-scrollbar {
+    -webkit-appearance: none;
+}
+
+.select::-webkit-scrollbar:vertical {
+    width: 8px;
+}
+
+.select::-webkit-scrollbar:horizontal {
+    height: 8px;
+}
+
+.select::-webkit-scrollbar-thumb {
+    cursor: pointer;
+    border: 2px solid rgba(225, 225, 225, 0); /* should match background, can't be transparent */
+    background-color: rgba(0, 0, 0, .5);
+}
+
+.select::-webkit-scrollbar-track {
+    background-color: rgba(225, 225, 225, .5);
 }
 
 .menu .item {
 	padding: 10px 15px;
 	cursor: pointer;
+	display: block;
 }
 
-.menu .item:hover {
+.menu a.item:hover,
+.menu a.item.is-active {
 	background: #4FC1E9;
 	color: #fff;
 }
@@ -43,24 +61,38 @@ a {
 }
 
 .user-menu {
-	max-width: calc(100% - 90px);
+	padding: 0;
+	border-bottom: solid 1px #f1f1f1;
+	max-width: calc(100% - 73px);
 }
 
-.user-menu > span {
-	cursor: pointer;
-	margin-right: 10px;
+.user-menu .item {
+	line-height: 49px;
+    display: inline-block;
+    cursor: pointer;
+    padding: 0 10px;
 }
 
-.disconnect {
+.user-menu .item:hover,
+.user-menu .item.is-active {
+	background: #4FC1E9;
+	color: #fff;
+}
+
+.user-menu .disconnect {
 	float: right;
+}
+
+.user-menu .disconnect:hover {
+	background: #F44336;
 }
 
 .select {
 	position: absolute;
 	left: 0;
-	top: 50px;
+	top: 58px;
 	width: 100%;
-	height: 150px;
+	height: 141px;
 	overflow: auto;
 }
 
@@ -70,7 +102,7 @@ a {
 	left: 0;
 	top: 0;
 	width: 100%;
-	height: 50px;
+	height: 51px;
 	color: #fff;
 	padding: 15px;
 	font-size: 15px;
@@ -83,7 +115,7 @@ a {
 }
 
 .interface.is-open {
-	transform: translateX(200px);
+	transform: translateX(230px);
 }
 
 .toggle-settings {

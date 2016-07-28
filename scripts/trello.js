@@ -263,6 +263,34 @@ trello.search = function(data) {
 let timerDates = [];
 let timerData = [];
 
+const timeEst = () => {
+
+	let time = '**Estimated time:** *';
+
+	// loop through each action find time logs
+	// .each 'actions'
+	// text.match('Tarsier Time Log')
+	// timeLogs.push(action)
+
+	// find the total amount of time spent
+	// .split('\n---')[1]
+	// .match(/(\*[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\*)/g)
+	// .replace('*', '')
+	// .split(':')
+	// totalSpent += time
+
+	// find the total time estimated
+	// .split('\n---')[2]
+	// .match(/(\*[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\*)/g)
+	// .replace('*', '')
+	// .split(':')
+	// totalEst += time
+
+	// if time spent is more than estimated
+	// add extra time on top of estimation
+
+}
+
 const timeSpent = () => {
 	// @fix more complete system needed for counting time
 	let time = '**Current time spent:** *';
@@ -283,7 +311,10 @@ const timeSpent = () => {
 		let seconds = moment.duration(timeSpentInt).seconds();
 		let minutes = moment.duration(timeSpentInt).minutes();
 		let hours = moment.duration(timeSpentInt).hours();
-		time += hours + 'h ' + minutes + 'm ' + seconds + 's';
+		let h = $.trim(hours).length === 1 ? '0' + hours : hours;
+        let m = $.trim(minutes).length === 1 ? '0' + minutes : minutes;
+        let s = $.trim(seconds).length === 1 ? '0' + seconds : seconds;
+		time += h + ':' + m + ':' + s;
 	}
 
 	if(timerDates.length <= 1) time += 'not enough data';
