@@ -26,9 +26,9 @@
 	}
 
 	.window-module.add-comment-section + .window-module {
-		clear: none !important;
 		float: left !important;
 		width: 48% !important;
+		clear: left !important;
 	}
 
 	.window-sidebar {
