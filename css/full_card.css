@@ -1,39 +1,70 @@
 
 @media (min-width: 880px) {
 
-	.window {
-		width: 100% !important;
-		margin: 0 !important;
-		height: 100% !important;
-		overflow: auto !important;
-		border-radius: 0 !important;
+	.window.window {
+		background: #fff;
 	}
 
-	.window-main-col {
-		width: 85% !important;
+	.full-width.window.window {
+		width: 100%;
+		margin: 0;
+		height: 100%;
+		overflow: auto;
+		border-radius: 0;
+	}
+
+	.window .window-header {
+		background: #f1f1f1;
+		margin: 0;
+		padding: 20px 45px;
+		border-bottom: solid 1px #DEDEDE;
+	}
+
+	.full-width.window .window-main-col {
+		width: 85%;
 		box-sizing: border-box;
 	}
 
-	.window-module.checklist-list {
-		float: right !important;
-		width: 48% !important;
+	.full-width.window .window-module.checklist-list {
+		float: right;
+		width: 48%;
 	}
 
-	.window-module.add-comment-section {
-		clear: none !important;
-		float: left !important;
-		width: 48% !important;
+	.full-width.window .window-module.add-comment-section {
+		clear: none;
+		float: left;
+		width: 48%;
 	}
 
-	.window-module.add-comment-section + .window-module {
-		float: left !important;
-		width: 48% !important;
-		clear: left !important;
+	.full-width.window .window-module.add-comment-section + .window-module {
+		float: left;
+		width: 48%;
+		clear: left;
 	}
 
-	.window-sidebar {
-		width: 15% !important;
+	.full-width.window .window-sidebar {
+		width: 15%;
 		box-sizing: border-box;
+	}
+
+	.window .tabbed-pane-nav {
+		text-align: left;
+		background: none;
+	}
+
+	.window .tabbed-pane-nav-item {
+		cursor: pointer;
+	}
+
+	.window .action-comment,
+	.window textarea {
+		width: 100%;
+		border: solid 1px #f1f1f1 !important;
+		background: #f1f1f1;
+	}
+
+	.window .button-link {
+		background: #f1f1f1;
 	}
 
 }
