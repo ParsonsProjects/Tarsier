@@ -38,19 +38,23 @@ const cardOpen = () => {
 const sortActions = () => {
 
 	let tabbedNav = '<div class="tabbed-pane-nav"><ul style="text-align: left;">';
-	tabbedNav += '<li class="tabbed-pane-nav-item"><a class="tabbed-pane-nav-item-button active js-all">All</a></li>';
-	tabbedNav += '<li class="tabbed-pane-nav-item"><a class="tabbed-pane-nav-item-button js-comments">Comments</a></li>';
-	tabbedNav += '<li class="tabbed-pane-nav-item"><a class="tabbed-pane-nav-item-button js-other">Activity</a></li>';
+	tabbedNav += '<li class="tabbed-pane-nav-item"><a data-type="all" class="tabbed-pane-nav-item-button active js-all">All</a></li>';
+	tabbedNav += '<li class="tabbed-pane-nav-item"><a data-type="comments" class="tabbed-pane-nav-item-button js-comments">Comments</a></li>';
+	tabbedNav += '<li class="tabbed-pane-nav-item"><a data-type="time" class="tabbed-pane-nav-item-button js-time">Time Log</a></li>';
+	tabbedNav += '<li class="tabbed-pane-nav-item"><a data-type="other" class="tabbed-pane-nav-item-button js-other">Activity</a></li>';
 	tabbedNav += '</ul></div>';
 
 	let tabbedContent = '<div class="tabbed-panes">';
 	tabbedContent += '<div class="tab-pane js-tab-all"></div>';
 	tabbedContent += '<div style="display: none;" class="tab-pane js-tab-comments"></div>';
+	tabbedContent += '<div style="display: none;" class="tab-pane js-tab-time"></div>';
 	tabbedContent += '<div style="display: none;" class="tab-pane js-tab-other"></div>';
 
 	let allActions = [];
 	let commentActions = [];
 	let otherActions = [];
+	let timeActions = [];
+	let observer;
 
 	$('.js-list-actions').before(tabbedNav + tabbedContent);
 
@@ -62,7 +66,11 @@ const sortActions = () => {
 
 			function init() {
 				loopActions();
-				showAll();
+			 	showAll();
+				var callback = $('.tabbed-pane-nav-item-button.active').data('type');
+			 	if(callback == 'comments') showComments();
+			 	if(callback == 'other') showOther();
+			 	if(callback == 'time') showTime();
 				startObserver();
 			}
 
@@ -71,11 +79,16 @@ const sortActions = () => {
 				allActions = [];
 				commentActions = [];
 				otherActions = [];
+				timeActions = [];
 				let $actions = $('.js-list-actions > .phenom');
 				$actions.each(function(e) {
 
 					if($(this).hasClass('mod-comment-type')) {
-						commentActions.push($(this));
+						if($(this).find('.comment-box-input').val().match('#TarsierTimeLog')) {
+							timeActions.push($(this));
+						} else {
+							commentActions.push($(this));
+						}
 					} else {
 						otherActions.push($(this));
 					}
@@ -96,9 +109,10 @@ const sortActions = () => {
 				 	init();
 				};
 
+				observer = new MutationObserver(fnCallback);
+
 				//now create our observer and get our target element
-				var observer = new MutationObserver(fnCallback),
-				elTarget = document.querySelector(".js-list-actions"),
+				var elTarget = document.querySelector(".js-list-actions"),
 				objConfig = {
 				 	childList: true,
 				 	subtree : true,
@@ -109,6 +123,12 @@ const sortActions = () => {
 				//then actually do some observing
 				observer.observe(elTarget, objConfig);
 
+			}
+
+			function showTime() {
+				for (var i = 0; i < timeActions.length; i++) {
+					timeActions[i].appendTo($('.js-tab-time'))
+				}
 			}
 
 			function showAll() {
@@ -129,31 +149,32 @@ const sortActions = () => {
 				}
 			}
 
-			$('.js-all').on('click', (e) => {
-				showAll();
+			function swapTab(tab) {
 				$('.js-list-actions').hide();
 				$('.tabbed-pane-nav-item-button').removeClass('active');
-				$('.js-all').addClass('active');
+				$('.js-'+tab).addClass('active');
 				$('.tab-pane').hide();
-				$('.js-tab-all').show();
+				$('.js-tab-'+tab).show();
+			}
+
+			$('.js-time').on('click', (e) => {
+				showTime();
+				swapTab('time');
+			});
+
+			$('.js-all').on('click', (e) => {
+				showAll();
+				swapTab('all');
 			});
 
 			$('.js-comments').on('click', (e) => {
 				showComments();
-				$('.js-list-actions').hide();
-				$('.tabbed-pane-nav-item-button').removeClass('active');
-				$('.js-comments').addClass('active');
-				$('.tab-pane').hide();
-				$('.js-tab-comments').show();
+				swapTab('comments');
 			});
 
 			$('.js-other').on('click', (e) => {
 				showOther();
-				$('.js-list-actions').hide();
-				$('.tabbed-pane-nav-item-button').removeClass('active');
-				$('.js-other').addClass('active');
-				$('.tab-pane').hide();
-				$('.js-tab-other').show();
+				swapTab('other');
 			});
 
 			clearInterval(cardInterval);
@@ -172,7 +193,7 @@ const addActions = () => {
 
 		if($cardWindow.length) {
 
-			let $startTimerBtn = $('<a class="button-link js-start-timer" href="#"><span class="icon-sm icon-clock"></span> Start Timer</a>').prependTo($cardWindow);
+			let $startTimerBtn = $('<a class="button-link js-start-timer disabled" href="#"><span class="icon-sm icon-clock"></span> Start Timer</a>').prependTo($cardWindow);
 			let $pauseTimerBtn = $('<a class="button-link js-pause-timer hide" href="#"><span class="icon-sm icon-clock"></span> Pause Timer</a>').prependTo($cardWindow);
 			let $stopTimerBtn = $('<a class="button-link js-stop-timer hide" href="#"><span class="icon-sm icon-close"></span> Stop Timer</a>').prependTo($cardWindow);
 

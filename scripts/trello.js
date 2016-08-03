@@ -4,6 +4,7 @@ const trello = {};
 trello.sendMessage = function(data) {
 
 	chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+		if(!tabs) return;
 	  	chrome.tabs.sendMessage(tabs[0].id, data, (response) => {
 
 	  	});
@@ -105,11 +106,20 @@ trello.getCards = (id) => {
 trello.getCard = (id) => {
 
 	Trello.get("cards/"+id, (card) => {
+
+		chrome.runtime.sendMessage({
+	    	from: 'trello',
+		    subject: 'set',
+		    label: 'currentCardLink',
+		    value: card.shortUrl
+		});
+
         trello.sendMessage({
 		    from: 'background',
 		    subject: 'getCard',
 		    value: card
 		});
+
     });
 
 }
@@ -149,8 +159,9 @@ trello.status = function() {
 trello.timerLog = function(currentCard, currentComment, date, data) {
 
 	trello.getDate(date).then(() => {
-		trello.getData(data).then(() => {
-			let comment = timerComment();
+		return trello.getData(data);
+	}).then(() => {
+		timerComment().then((comment) => {
 			Trello.put("cards/"+currentCard+"/actions/"+currentComment+"/comments", { idAction: currentComment, text: comment }, (successMsg) => {
 		       	trello.sendMessage({
 				    from: 'background',
@@ -182,17 +193,18 @@ trello.timerStart = function(currentCard, date, data) {
 		if (chrome.runtime.error) console.log("Runtime error.");
     });
 
-	let comment = timerComment();
-	Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
-       	trello.set('timerID', successMsg.id);
-       	trello.sendMessage({
-		    from: 'background',
-		    subject: 'timerStart',
-		    value: successMsg
-		});
-		chrome.browserAction.setBadgeText({ text: ' ' });
-		chrome.browserAction.setBadgeBackgroundColor({ color: '#FFC107' });
-    });
+	timerComment().then((comment) => {
+		Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
+	       	trello.set('timerID', successMsg.id);
+	       	trello.sendMessage({
+			    from: 'background',
+			    subject: 'timerStart',
+			    value: successMsg
+			});
+			chrome.browserAction.setBadgeText({ text: ' ' });
+			chrome.browserAction.setBadgeBackgroundColor({ color: '#FFC107' });
+	    });
+	});
 
 }
 
@@ -263,35 +275,75 @@ trello.search = function(data) {
 let timerDates = [];
 let timerData = [];
 
-const timeEst = () => {
+const timeEst = (data, spent) => {
 
-	let time = '**Estimated time:** *';
+	let time = '---\n**Estimated time:** *';
+	let totalEst = [0,0,0];
+	let timeLogs = [];
+	let h, m, s;
+	let noLog = 'not enough data*\n'
+	let totalSpent = spent;
 
-	// loop through each action find time logs
-	// .each 'actions'
-	// text.match('Tarsier Time Log')
-	// timeLogs.push(action)
+	data.actions.forEach((action, i) => {
+		let str = action.data.text;
+		if(!str) return;
+		if(!str.match('#TarsierTimeLog')) return;
+		timeLogs.push(action);
 
-	// find the total amount of time spent
-	// .split('\n---')[1]
-	// .match(/(\*[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\*)/g)
-	// .replace('*', '')
-	// .split(':')
-	// totalSpent += time
+		// @fix need to work out if s/m is big enough to count to next interval
 
-	// find the total time estimated
-	// .split('\n---')[2]
-	// .match(/(\*[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\*)/g)
-	// .replace('*', '')
-	// .split(':')
-	// totalEst += time
+	});
 
-	// if time spent is more than estimated
-	// add extra time on top of estimation
+	if(!timeLogs.length) return time + noLog;
+
+	if(timeLogs.length) {
+
+		let str = timeLogs[0].data.text;
+		let estStr = str.replace(/\n/g, '').split('---')[1];
+		estStr = estStr.match(/(\*[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\*)/g);
+
+		if(estStr) {
+			estStr = estStr[0].replace(/\*/g, '');
+			estStr = estStr.split(':');
+			totalEst[0] = parseInt(estStr[0]);
+			totalEst[1] = parseInt(estStr[1]);
+			totalEst[2] = parseInt(estStr[2]);
+		}
+
+		// remove first item as we are passing the time in
+		timeLogs.shift();
+
+		timeLogs.forEach((action, i) => {
+
+			let str = action.data.text;
+			let spentStr = str.replace(/\n/g, '').split('---')[0];
+			spentStr = spentStr.match(/(\*[0-9][0-9]:[0-9][0-9]:[0-9][0-9]\*)/g);
+			if(!spentStr) return;
+			spentStr = spentStr[0].replace(/\*/g, '');
+			spentStr = spentStr.split(':');
+			totalSpent[0] += parseInt(spentStr[0]);
+			totalSpent[1] += parseInt(spentStr[1]);
+			totalSpent[2] += parseInt(spentStr[2]);
+
+		});
+
+	}
+
+	if(totalSpent[2] > totalEst[2]) totalEst[2] = totalSpent[2];
+	if(totalSpent[1] > totalEst[1]) totalEst[1] = totalSpent[1];
+	if(totalSpent[0] > totalEst[0]) totalEst[0] = totalSpent[0];
+
+	h = $.trim(totalEst[0]).length === 1 ? '0' + totalEst[0] : totalEst[0];
+    m = $.trim(totalEst[1]).length === 1 ? '0' + totalEst[1] : totalEst[1];
+    s = $.trim(totalEst[2]).length === 1 ? '0' + totalEst[2] : totalEst[2];
+	time += h + ':' + m + ':' + s;
+
+	time += '*\n';
+	return time;
 
 }
 
-const timeSpent = () => {
+const timeSpent = (data) => {
 	// @fix more complete system needed for counting time
 	let time = '**Current time spent:** *';
 	let startArr = [];
@@ -314,28 +366,40 @@ const timeSpent = () => {
 		let h = $.trim(hours).length === 1 ? '0' + hours : hours;
         let m = $.trim(minutes).length === 1 ? '0' + minutes : minutes;
         let s = $.trim(seconds).length === 1 ? '0' + seconds : seconds;
+        let timeArr = (localStorage.getItem('timerStarted')) ? [hours, minutes, seconds] : [0,0,0];
 		time += h + ':' + m + ':' + s;
+		time += '*\n';
+		time += timeEst(data, timeArr);
 	}
 
-	if(timerDates.length <= 1) time += 'not enough data';
+	if(timerDates.length <= 1) {
+		time += 'not enough data';
+		time += '*\n';
+	}
 
-	time += '*\n';
 	return time;
 }
 
 const timerComment = () => {
 
-	let comment = '';
+	return new Promise((resolve) => {
 
-	comment += '**Tarsier Time Log**\n';
-	comment += '\n';
-	comment += '---\n';
-	comment += timeSpent(timerDates);
-	comment += '---\n';
-	comment += timerData.join('\n');
-	comment += '\n\n';
-	comment += '*Do not delete. Please avoid editing this comment.*';
+		$.get(localStorage.getItem('currentCardLink') + '.json', (data) => {
 
-	return comment;
+			let comment = '';
+
+			comment += timeSpent(data);
+			comment += '---\n';
+			comment += timerData.join('\n');
+			comment += '\n\n';
+			comment += '*Do not delete. Please avoid editing this comment.*';
+			comment += '\n';
+			comment += '#TarsierTimeLog';
+
+			resolve(comment);
+
+		});
+
+	});
 
 }

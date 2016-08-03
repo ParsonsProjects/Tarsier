@@ -226,6 +226,18 @@ var userActions = {
 							e.preventDefault();
 							// set comments time
 							user.timer.started(false);
+							chrome.runtime.sendMessage({
+						    	from: 'trello',
+							    subject: 'set',
+							    label: 'timerStarted',
+							    value: false
+							});
+							chrome.runtime.sendMessage({
+						    	from: 'trello',
+							    subject: 'set',
+							    label: 'timerPaused',
+							    value: false
+							});
 							timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 						}
 					}, [
@@ -253,6 +265,12 @@ var userActions = {
 							    label: 'timerStarted',
 							    value: true
 							});
+							chrome.runtime.sendMessage({
+						    	from: 'trello',
+							    subject: 'set',
+							    label: 'timerPaused',
+							    value: false
+							});
 							timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 						}
 					}, [
@@ -264,6 +282,18 @@ var userActions = {
 					return m('.icon button [title="Resume"]', {
 						onclick: (e) => {
 							e.preventDefault();
+							chrome.runtime.sendMessage({
+						    	from: 'trello',
+							    subject: 'set',
+							    label: 'timerStarted',
+							    value: true
+							});
+							chrome.runtime.sendMessage({
+						    	from: 'trello',
+							    subject: 'set',
+							    label: 'timerPaused',
+							    value: false
+							});
 							user.timer.paused(false);
 							// set comments time
 							timerLog('Timer resumed - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});

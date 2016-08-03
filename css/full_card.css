@@ -25,7 +25,8 @@
 		box-sizing: border-box;
 	}
 
-	.full-width.window .window-module.checklist-list {
+	.full-width.window .window-module.checklist-list,
+	.full-width.window .window-module.js-attachments-section {
 		float: right;
 		width: 48%;
 	}
@@ -65,6 +66,10 @@
 
 	.window .button-link {
 		background: #f1f1f1;
+	}
+
+	.window .phenom:hover {
+		border-bottom: solid 1px #298fca;
 	}
 
 }
