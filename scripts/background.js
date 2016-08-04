@@ -40,7 +40,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responseCallback) => {
     /* First, validate the message's structure */
     if ((msg.from === 'trello') && (msg.subject === 'showApp')) {
     	chrome.tabs.create({
-		    url: 'https://trello.com/1/authorize?key=f8af011952b5693e6a92da65bf6f298e&name=TrelloPimped&expiration=never&scope=read,write&response_type=token',
+		    url: 'https://trello.com/1/authorize?key=f8af011952b5693e6a92da65bf6f298e&name=Tarsier&expiration=never&scope=read,write&response_type=token',
 		    active: false
 		}, (tab) => {
 		    // After the tab has been created, open a window to inject the tab
@@ -122,7 +122,7 @@ chrome.runtime.onMessage.addListener((msg, sender, responseCallback) => {
 		    break;
 		}
 
-		return true; // needed for asynchronously
+		return true; // needed for asynchronous
 
     }
 
