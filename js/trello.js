@@ -126,6 +126,8 @@ const sortActions = () => {
 			}
 
 			function showTime() {
+				$('.js-tab-time').html('');
+				if(timeActions.length === 0) $('<div class="phenom mod-other-type u-font-weight-bold">No Time Logs</div>').appendTo($('.js-tab-time'));
 				for (var i = 0; i < timeActions.length; i++) {
 					timeActions[i].appendTo($('.js-tab-time'))
 				}
@@ -138,6 +140,8 @@ const sortActions = () => {
 			}
 
 			function showComments() {
+				$('.js-tab-comments').html('');
+				if(timeActions.length === 0) $('<div class="phenom mod-other-type u-font-weight-bold">No Comments</div>').appendTo($('.js-tab-comments'));
 				for (var i = 0; i < commentActions.length; i++) {
 					commentActions[i].appendTo($('.js-tab-comments'))
 				}
@@ -212,6 +216,12 @@ const addActions = () => {
 					    label: 'timerStarted',
 					    value: true
 					});
+					chrome.runtime.sendMessage({
+				    	from: 'trello',
+					    subject: 'set',
+					    label: 'timerPaused',
+					    value: false
+					});
 					timerStart('Timer started - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'play', 'time': moment()});
 					$startTimerBtn.addClass('hide');
 					$pauseTimerBtn.removeClass('hide');
@@ -226,8 +236,14 @@ const addActions = () => {
 				chrome.runtime.sendMessage({
 			    	from: 'trello',
 				    subject: 'set',
-				    label: 'timerPaused',
+				    label: 'timerStarted',
 				    value: true
+				});
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'set',
+				    label: 'timerPaused',
+				    value: false
 				});
 				timerLog('Timer paused - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'paused', 'time': moment()});
 
@@ -243,10 +259,20 @@ const addActions = () => {
 				    label: 'timerStarted',
 				    value: false
 				});
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'set',
+				    label: 'timerPaused',
+				    value: false
+				});
 				timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 				$stopTimerBtn.addClass('hide');
 				$pauseTimerBtn.addClass('hide');
 				$startTimerBtn.removeClass('hide');
+				chrome.runtime.sendMessage({
+			    	from: 'trello',
+				    subject: 'timerStop'
+				}, function(response) { console.log(response) });
 
 			});
 
@@ -268,14 +294,8 @@ const timerStart = (timerData, timerDates) => {
 		    value: cardID,
 		    data: timerData,
 		    dates: timerDates
-		});
-
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-
-			if ((msg.from === 'background') && (msg.subject === 'timerStart')) {
-				resolve(msg.value);
-			}
-
+		}, function(response) {
+			resolve(response);
 		});
 
 	});
@@ -295,20 +315,8 @@ const timerLog = (timerData, timerDates) => {
 		    },
 		    data: timerData,
 		    dates: timerDates
-		});
-
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-
-			if ((msg.from === 'background') && (msg.subject === 'timerLog')) {
-				resolve(msg.value);
-				if(!timerStarted) {
-					chrome.runtime.sendMessage({
-				    	from: 'trello',
-					    subject: 'timerStop'
-					});
-				}
-			}
-
+		}, function(response) {
+			resolve(response);
 		});
 
 	});

@@ -18,15 +18,16 @@ trello.sendMessage = function(data) {
 
 trello.runSync = function() {
 
-	chrome.storage.sync.get((items) => {
+	return new Promise((resolve) => {
 
-		Object.keys(items).forEach((key) => {
-		    localStorage.setItem(key, items[key]);
-		});
+		chrome.storage.sync.get((items) => {
 
-		trello.sendMessage({
-		    from: 'background',
-		    subject: 'synced'
+			Object.keys(items).forEach((key) => {
+			    localStorage.setItem(key, items[key]);
+			});
+
+			resolve('Sync Run');
+
 		});
 
 	});
@@ -35,92 +36,103 @@ trello.runSync = function() {
 
 trello.set = function(label, value) {
 
-	if(typeof label === 'object') label = JSON.stringify(label);
+	return new Promise((resolve) => {
 
-	chrome.storage.sync.set({label: value}, () => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-		localStorage.setItem(label, value);
-    });
+		if(typeof label === 'object') label = JSON.stringify(label);
+
+		chrome.storage.sync.set({label: value}, () => {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.setItem(label, value);
+			resolve(label + ' stored');
+	    });
+
+	});
 
 }
 
 trello.clear = function() {
 
-	chrome.storage.sync.clear(() => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-		localStorage.clear();
-		Trello.deauthorize();
-		trello.sendMessage({
-		    from: 'trello',
-		    subject: 'update'
-		});
-    });
+	return new Promise((resolve) => {
+
+		chrome.storage.sync.clear(() => {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.clear();
+			Trello.deauthorize();
+			resolve('Storage Cleared');
+	    });
+
+	});
 
 }
 
 trello.remove = function(label) {
 
-	chrome.storage.sync.remove(label, () => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-		localStorage.removeItem(label);
-    });
+	return new Promise((resolve) => {
+
+		chrome.storage.sync.remove(label, () => {
+			if (chrome.runtime.error) console.log("Runtime error.");
+			localStorage.removeItem(label);
+			resolve(label + ' removed');
+	    });
+
+	});
 
 }
 
 trello.getBoards = function() {
 
-	Trello.get("members/me/boards/all", (boards) => {
-        trello.sendMessage({
-		    from: 'background',
-		    subject: 'getBoards',
-		    value: boards
-		});
-    });
+	return new Promise((resolve) => {
+
+		Trello.get("members/me/boards/all", (boards) => {
+	        resolve(boards);
+	    });
+
+	});
 
 }
 
 trello.getLists = (id) => {
 
-	Trello.get("boards/"+id+"/lists/all", (lists) => {
-        trello.sendMessage({
-		    from: 'background',
-		    subject: 'getLists',
-		    value: lists
-		});
-    });
+	return new Promise((resolve) => {
+
+		Trello.get("boards/"+id+"/lists/all", (lists) => {
+	        resolve(lists);
+	    });
+
+	});
 
 }
 
 trello.getCards = (id) => {
 
-	Trello.get("lists/"+id+"/cards/all", (cards) => {
-        trello.sendMessage({
-		    from: 'background',
-		    subject: 'getCards',
-		    value: cards
-		});
-    });
+	return new Promise((resolve) => {
+
+		Trello.get("lists/"+id+"/cards/all", (cards) => {
+	        resolve(cards);
+	    });
+
+	});
 
 }
 
 trello.getCard = (id) => {
 
-	Trello.get("cards/"+id, (card) => {
+	return new Promise((resolve) => {
 
-		chrome.runtime.sendMessage({
-	    	from: 'trello',
-		    subject: 'set',
-		    label: 'currentCardLink',
-		    value: card.shortUrl
-		});
+		Trello.get("cards/"+id, (card) => {
 
-        trello.sendMessage({
-		    from: 'background',
-		    subject: 'getCard',
-		    value: card
-		});
+			chrome.runtime.sendMessage({
+		    	from: 'trello',
+			    subject: 'set',
+			    label: 'currentCardLink',
+			    value: card.shortUrl
+			});
 
-    });
+			resolve(card);
+
+	    });
+
+	});
 
 }
 
@@ -128,115 +140,109 @@ trello.status = function() {
 
 	Trello.setKey('f8af011952b5693e6a92da65bf6f298e');
 
-	Trello.authorize({
-        name: "Trello Helper Extension",
-        expiration: "never",
-        interactive: false,
-        scope: {read: true, write: true},
-        success: () => {
+	return new Promise((resolve) => {
 
-        	trello.sendMessage({
-			    from: 'background',
-			    subject: 'status',
-			    value: true
-			});
+		Trello.authorize({
+	        name: "Trello Helper Extension",
+	        expiration: "never",
+	        interactive: false,
+	        scope: {read: true, write: true},
+	        success: () => {
 
-			chrome.browserAction.setBadgeText({ text: ' ' });
-			chrome.browserAction.setBadgeBackgroundColor({ color: '#4FC1E9' });
+				chrome.browserAction.setBadgeText({ text: ' ' });
+				chrome.browserAction.setBadgeBackgroundColor({ color: '#4FC1E9' });
+				resolve(true);
 
-        },
-        error: () => {
+	        },
+	        error: () => {
 
-        	// maybe error and store in storage?
-        	chrome.browserAction.setBadgeText({ text: ' ' });
-        	chrome.browserAction.setBadgeBackgroundColor({ color: '#FF5722' });
+	        	// maybe error and store in storage?
+	        	chrome.browserAction.setBadgeText({ text: ' ' });
+	        	chrome.browserAction.setBadgeBackgroundColor({ color: '#FF5722' });
+	        	resolve(false);
 
-        }
-    });
+	        }
+	    });
+
+	});
 
 }
 
 trello.timerLog = function(currentCard, currentComment, date, data) {
 
-	trello.getDate(date).then(() => {
-		return trello.getData(data);
-	}).then(() => {
-		timerComment().then((comment) => {
-			Trello.put("cards/"+currentCard+"/actions/"+currentComment+"/comments", { idAction: currentComment, text: comment }, (successMsg) => {
-		       	trello.sendMessage({
-				    from: 'background',
-				    subject: 'timerLog',
-				    value: successMsg
-				});
-		    }, (errorMsg) => {
-		    	trello.remove('timerID');
-		    });
+	return new Promise((resolve) => {
+
+		trello.getDate(date).then(() => {
+			return trello.getData(data);
+		}).then(() => {
+			timerComment().then((comment) => {
+				Trello.put("cards/"+currentCard+"/actions/"+currentComment+"/comments", { idAction: currentComment, text: comment }, (successMsg) => {
+					resolve(successMsg);
+			    }, (errorMsg) => {
+			    	trello.remove('timerID');
+			    });
+			});
 		});
+
 	});
 
 }
 
 trello.timerStart = function(currentCard, date, data) {
 
-	timerDates = [];
-	timerData = [];
-	timerDates.push(date);
-	timerData.push(data);
+	return new Promise((resolve) => {
 
-	let timerDatesString = JSON.stringify(timerDates);
+		timerDates = [];
+		timerData = [];
+		timerDates.push(date);
+		timerData.push(data);
 
-	chrome.storage.local.set({'timerDates': timerDatesString}, () => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-    });
+		let timerDatesString = JSON.stringify(timerDates);
 
-    chrome.storage.local.set({'timerData': timerData.join('|')}, () => {
-		if (chrome.runtime.error) console.log("Runtime error.");
-    });
+		localStorage.setItem('timerDates', timerDatesString);
+		localStorage.setItem('timerData', timerData.join('|'));
 
-	timerComment().then((comment) => {
-		Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
-	       	trello.set('timerID', successMsg.id);
-	       	trello.sendMessage({
-			    from: 'background',
-			    subject: 'timerStart',
-			    value: successMsg
-			});
-			chrome.browserAction.setBadgeText({ text: ' ' });
-			chrome.browserAction.setBadgeBackgroundColor({ color: '#FFC107' });
-	    });
+	    timerComment().then((comment) => {
+			Trello.post("cards/"+currentCard+"/actions/comments", { text: comment }, (successMsg) => {
+		       	trello.set('timerID', successMsg.id);
+				chrome.browserAction.setBadgeText({ text: ' ' });
+				chrome.browserAction.setBadgeBackgroundColor({ color: '#FFC107' });
+		       	resolve(successMsg);
+		    });
+		});
+
 	});
 
 }
 
 trello.timerStop = function() {
 
-	chrome.storage.local.remove('timerDates');
-	chrome.storage.local.remove('timerData');
-	trello.remove('timerStarted');
-   	trello.sendMessage({
-	    from: 'background',
-	    subject: 'timerStop'
-	});
+	return new Promise((resolve) => {
 
-	chrome.browserAction.setBadgeText({ text: ' ' });
-	chrome.browserAction.setBadgeBackgroundColor({ color: '#4FC1E9' });
+		localStorage.removeItem('timerDates');
+		localStorage.removeItem('timerData');
+		trello.remove('timerStarted');
+		chrome.browserAction.setBadgeText({ text: ' ' });
+		chrome.browserAction.setBadgeBackgroundColor({ color: '#4FC1E9' });
+		resolve('timerStopped');
+
+	});
 
 }
 
+let timerDates = [];
+let timerData = [];
+
 trello.getDate = function(date) {
 
-	return new Promise((resolve) => {
+	return new Promise((resolveDates) => {
 
-		chrome.storage.local.get('timerDates', (items) => {
-			if (chrome.runtime.error) console.log("Runtime error.");
-			timerDates = JSON.parse(items.timerDates);
-			timerDates.push(date);
-			let timerDatesString = JSON.stringify(timerDates);
-			chrome.storage.local.set({'timerDates': timerDatesString}, () => {
-				if (chrome.runtime.error) console.log("Runtime error.");
-				resolve();
-		    });
-	    });
+		let items = localStorage.getItem('timerDates');
+		timerDates = JSON.parse(items);
+		timerDates.push(date);
+		let timerDatesString = JSON.stringify(timerDates);
+		localStorage.setItem('timerDates', timerDatesString);
+		resolveDates();
 
 	})
 
@@ -244,17 +250,13 @@ trello.getDate = function(date) {
 
 trello.getData = function(data) {
 
-	return new Promise((resolve) => {
+	return new Promise((resolveData) => {
 
-		chrome.storage.local.get('timerData', (items) => {
-			if (chrome.runtime.error) console.log("Runtime error.");
-			timerData = items.timerData.split('|');
-			timerData.push(data);
-			chrome.storage.local.set({'timerData': timerData.join('|')}, () => {
-				if (chrome.runtime.error) console.log("Runtime error.");
-				resolve();
-		    });
-	    });
+		let items = localStorage.getItem('timerData');
+		timerData = items.split('|');
+		timerData.push(data);
+		localStorage.setItem('timerData', timerData.join('|'));
+		resolveData();
 
 	})
 
@@ -262,18 +264,15 @@ trello.getData = function(data) {
 
 trello.search = function(data) {
 
-	Trello.get("search", data, (successMsg) => {
-       	trello.sendMessage({
-		    from: 'background',
-		    subject: 'search',
-		    value: successMsg
-		});
-    });
+	return new Promise((resolve) => {
+
+		Trello.get("search", data, (successMsg) => {
+	       	resolve(successMsg);
+	    });
+
+	});
 
 }
-
-let timerDates = [];
-let timerData = [];
 
 const timeEst = (data, spent) => {
 
@@ -326,6 +325,16 @@ const timeEst = (data, spent) => {
 			totalSpent[2] += parseInt(spentStr[2]);
 
 		});
+
+		if(totalSpent[2] >= 60) {
+			totalSpent[1] += Math.floor(totalSpent[2] / 60);
+			totalSpent[2] = totalSpent[2] % 60;
+		}
+
+		if(totalSpent[1] >= 60) {
+			totalSpent[0] += Math.floor(totalSpent[1] / 60);
+			totalSpent[1] = totalSpent[2] % 60;
+		}
 
 	}
 

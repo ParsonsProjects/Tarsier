@@ -1,5 +1,5 @@
 
-trello.runSync();
+// trello.runSync();
 trello.status();
 
 /*chrome.windows.create({
@@ -53,21 +53,78 @@ chrome.runtime.onMessage.addListener((msg, sender, responseCallback) => {
 		});
     }
 
-	if ((msg.from === 'trello') && (msg.subject === 'runSync')) trello.runSync();
+    if (msg.from === 'trello') {
 
-    if ((msg.from === 'trello') && (msg.subject === 'set')) trello.set(msg.label, msg.value);
-	if ((msg.from === 'trello') && (msg.subject === 'clear')) trello.clear();
-	if ((msg.from === 'trello') && (msg.subject === 'remove')) trello.remove(msg.label);
-	if ((msg.from === 'trello') && (msg.subject === 'search')) trello.search(msg.value);
+    	switch(msg.subject) {
+		    case 'runSync':
+		        trello.runSync().then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'set':
+		        trello.set(msg.label, msg.value);
+		        return;
+		    break;
+		    case 'clear':
+		        trello.clear().then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'remove':
+		        trello.remove(msg.label).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'search':
+		        trello.search(msg.value).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'status':
+		        trello.status().then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'getBoards':
+		        trello.getBoards().then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'getLists':
+		        trello.getLists(msg.value).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'getCards':
+		        trello.getCards(msg.value).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'getCard':
+		        trello.getCard(msg.value).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'timerStart':
+		        trello.timerStart(msg.value, msg.dates, msg.data).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'timerLog':
+		        trello.timerLog(msg.value.card, msg.value.comment, msg.dates, msg.data).then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		    case 'timerStop':
+		        trello.timerStop().then((data) => {
+		        	responseCallback(data);
+		        });
+		    break;
+		}
 
-	if ((msg.from === 'trello') && (msg.subject === 'status')) trello.status();
-	if ((msg.from === 'trello') && (msg.subject === 'getBoards')) trello.getBoards();
-	if ((msg.from === 'trello') && (msg.subject === 'getLists')) trello.getLists(msg.value);
-	if ((msg.from === 'trello') && (msg.subject === 'getCards')) trello.getCards(msg.value);
-	if ((msg.from === 'trello') && (msg.subject === 'getCard')) trello.getCard(msg.value);
-	if ((msg.from === 'trello') && (msg.subject === 'timerStart')) trello.timerStart(msg.value, msg.dates, msg.data);
-	if ((msg.from === 'trello') && (msg.subject === 'timerLog')) trello.timerLog(msg.value.card, msg.value.comment, msg.dates, msg.data);
-	if ((msg.from === 'trello') && (msg.subject === 'timerStop')) trello.timerStop();
+		return true; // needed for asynchronously
+
+    }
 
 });
 

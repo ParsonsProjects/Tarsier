@@ -82,14 +82,8 @@ var getTrelloCard = (id) => {
 			    from:    'trello',
 			    subject: 'getCard',
 			    value: id
-			});
-
-			chrome.runtime.onMessage.addListener((msg, sender) => {
-
-				if ((msg.from === 'background') && (msg.subject === 'getCard')) {
-					resolve(msg.value);
-				}
-
+			}, function(response) {
+				resolve(response);
 			});
 
 		}
@@ -148,11 +142,13 @@ var userMenu = {
 			]),
 			m('span.item disconnect[title="Disconnect"]', { onclick: function(e){
 				e.preventDefault();
-				if(user.timer.started()) timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
+				if(user.timer.started() == true) timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
 				user = orginal;
 				chrome.runtime.sendMessage({
 				    from: 'trello',
 				    subject: 'clear'
+				}, function(response) {
+					updateLoggedIn();
 				});
 				$body.removeClass('is-open');
 				$('.interface').removeClass('is-open');
@@ -189,7 +185,7 @@ var userActions = {
 
 			function timerClock() {
 
-				if(user.timer.started()) {
+				if(user.timer.started() == true) {
 					// return m('', user.)
 				}
 
@@ -197,7 +193,7 @@ var userActions = {
 
 			function pauseButton() {
 
-				if(user.timer.started() && !user.timer.paused()) {
+				if(user.timer.started() == true && user.timer.paused()!= true) {
 					return m('span.icon button [title="Pause"]', {
 						onclick: (e) => {
 							e.preventDefault();
@@ -220,7 +216,7 @@ var userActions = {
 
 			function stopButton() {
 
-				if(user.timer.started()) {
+				if(user.timer.started() == true) {
 					return m('.icon button[title="Stop"]', {
 						onclick: (e) => {
 							e.preventDefault();
@@ -239,6 +235,10 @@ var userActions = {
 							    value: false
 							});
 							timerLog('Timer stopped - *'+moment().format('H:mm a on MMM D, YYYY')+'*', {'type': 'stopped', 'time': moment()});
+							chrome.runtime.sendMessage({
+						    	from: 'trello',
+							    subject: 'timerStop'
+							}, function(response) { console.log(response) });
 						}
 					}, [
 						m('i.stop icon')
@@ -249,7 +249,7 @@ var userActions = {
 
 			function playButton() {
 
-				if(!user.timer.started()) {
+				if(user.timer.started() != true) {
 					return m('.icon button [title="Start"]', {
 						onclick: (e) => {
 							e.preventDefault();
@@ -278,7 +278,7 @@ var userActions = {
 					])
 				}
 
-				if(user.timer.started() && user.timer.paused()) {
+				if(user.timer.started() == true && user.timer.paused() == true) {
 					return m('.icon button [title="Resume"]', {
 						onclick: (e) => {
 							e.preventDefault();
@@ -306,7 +306,7 @@ var userActions = {
 			}
 
 		}
-		return markup
+		return markup;
 	}
 }
 
@@ -323,20 +323,8 @@ var timerLog = (timerData, timerDates) => {
 		    },
 		    data: timerData,
 		    dates: timerDates
-		});
-
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-
-			if ((msg.from === 'background') && (msg.subject === 'timerLog')) {
-				resolve(msg.value);
-				if(!user.timer.started()) {
-					chrome.runtime.sendMessage({
-				    	from: 'trello',
-					    subject: 'timerStop'
-					});
-				}
-			}
-
+		}, function(response) {
+			resolve(response);
 		});
 
 	});
@@ -353,15 +341,9 @@ var timerStart = (timerData, timerDates) => {
 		    value: user.current.card(),
 		    data: timerData,
 		    dates: timerDates
-		});
-
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-
-			if ((msg.from === 'background') && (msg.subject === 'timerStart')) {
-				user.timer.id(msg.value.id);
-				resolve(msg.value);
-			}
-
+		}, function(response) {
+			user.timer.id(response.id);
+			resolve(response);
 		});
 
 	});
@@ -382,7 +364,7 @@ var userCards = {
 	controller: function() {
 		var ctrl = this;
 		ctrl.changeCard = function(value, text, $selectedItem) {
-			if(!user.timer.started()) {
+			if(user.timer.started() != true) {
 				user.current.card(value);
 				chrome.runtime.sendMessage({
 			    	from: 'trello',
@@ -449,7 +431,7 @@ var userLists = {
 var userBoards = {
 	controller: function() {
 		this.changeBoard = function(value, text, $selectedItem) {
-			if(!user.timer.started()) {
+			if(user.timer.started() != true) {
 				chrome.runtime.sendMessage({
 			    	from: 'trello',
 				    subject: 'set',
@@ -533,19 +515,8 @@ $(() => {
 	chrome.runtime.sendMessage({
 	    from:    'trello',
 	    subject: 'runSync'
-	});
+	}, function(response) {
 
-	$('body').on('click', '.result', function(e){
-		e.preventDefault();
-		e.stopPropagation();
-	});
-
-})
-
-chrome.runtime.onMessage.addListener((msg, sender) => {
-
-	if ((msg.from === 'trello') && (msg.subject === 'update')) updateLoggedIn();
-	if ((msg.from === 'background') && (msg.subject === 'synced')) {
 		user = {
 			loggedIn: m.prop(false),
 			boards: [],
@@ -562,8 +533,24 @@ chrome.runtime.onMessage.addListener((msg, sender) => {
 				paused: m.prop(localStorage.getItem('timerPaused'))
 			}
 		}
+
+		//initialize the application
+		m.mount(document.body, app);
+
 		updateLoggedIn();
-	}
+
+	});
+
+	$('body').on('click', '.result', function(e){
+		e.preventDefault();
+		e.stopPropagation();
+	});
+
+})
+
+chrome.runtime.onMessage.addListener((msg, sender) => {
+
+	if ((msg.from === 'trello') && (msg.subject === 'update')) updateLoggedIn();
 
 });
 
@@ -588,14 +575,8 @@ var getLists = (id) => {
 			    from:    'trello',
 			    subject: 'getLists',
 			    value: id
-			});
-
-			chrome.runtime.onMessage.addListener((msg, sender) => {
-
-				if ((msg.from === 'background') && (msg.subject === 'getLists')) {
-					resolve(msg.value);
-				}
-
+			}, function(response) {
+				resolve(response);
 			});
 
 		}
@@ -616,14 +597,8 @@ var getCards = (id) => {
 			    from:    'trello',
 			    subject: 'getCards',
 			    value: id
-			});
-
-			chrome.runtime.onMessage.addListener((msg, sender) => {
-
-				if ((msg.from === 'background') && (msg.subject === 'getCards')) {
-					resolve(msg.value);
-				}
-
+			}, function(response) {
+				resolve(response);
 			});
 
 		}
@@ -639,14 +614,8 @@ var getBoards = () => {
 		chrome.runtime.sendMessage({
 		    from:    'trello',
 		    subject: 'getBoards'
-		});
-
-		chrome.runtime.onMessage.addListener((msg, sender) => {
-
-			if ((msg.from === 'background') && (msg.subject === 'getBoards')) {
-				resolve(msg.value);
-			}
-
+		}, function(response) {
+			resolve(response);
 		});
 
 	});
@@ -660,31 +629,25 @@ var updateLoggedIn = () => {
 	chrome.runtime.sendMessage({
 	    from:    'trello',
 	    subject: 'status'
-	});
+	}, function(response) {
 
-	chrome.runtime.onMessage.addListener((msg, sender) => {
-
-		if ((msg.from === 'background') && (msg.subject === 'status')) {
-
-			if(msg.value) {
-				user.loggedIn(msg.value);
-	            getBoards().then((boards) => {
-	            	user.boards = boards;
-	            	getLists(user.current.board()).then((lists) => {
-		            	user.lists = lists;
-		            	getCards(user.current.list()).then((cards) => {
-			            	user.cards = cards;
-			            	m.endComputation();
-			            });
+		if(response) {
+			user.loggedIn(response);
+            getBoards().then((boards) => {
+            	user.boards = boards;
+            	getLists(user.current.board()).then((lists) => {
+	            	user.lists = lists;
+	            	getCards(user.current.list()).then((cards) => {
+		            	user.cards = cards;
+		            	m.endComputation();
 		            });
 	            });
-			} else {
-				user.loggedIn(msg.value);
-			}
-
-			m.endComputation();
-
+            });
+		} else {
+			user.loggedIn(response);
 		}
+
+		m.endComputation();
 
 	});
 
@@ -697,7 +660,5 @@ function truncate( n, useWordBoundary ){
     return  isTooLong ? s_ + '&hellip;' : s_;
 };
 
-//initialize the application
-m.mount(document.body, app);
 
 
